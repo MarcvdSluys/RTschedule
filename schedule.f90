@@ -10,7 +10,7 @@ program schedule
   implicit none
   integer, parameter :: nLines=99
   integer :: status,ip,ln, it,np,pr, ri,ro, time, ti(nLines),ci(nLines),di(nLines),pi(nLines), li(nLines),cc(nLines),tte(nLines)
-  integer :: optts,majFr
+  integer :: optts,majFr, run(nLines)
   real(double) :: frac,load
   character :: inFile*(99), name(nLines), ccpr*(9),lipr*(9),ttepr*(9)
   
@@ -88,6 +88,7 @@ program schedule
      if(ri*ro.ne.0) then
         if(it.ne.1 .and. ri.ne.ro .and. cc(ro).gt.0 .and. li(ro).le.li(ri)) ri = ro  ! Keep the old task running if laxities are equal
      end if
+     run(it) = ri
      
      ! Print detailed data:
      do pr=1,np
@@ -140,7 +141,7 @@ program schedule
      end do
      
      
-     
+     ! New event:
      do pr=1,np
         tte(pr) = mod( ti(pr)+di(pr)-it + pi(pr)*1000, pi(pr))  ! Time to next deadline
         !tte(pr) = mod( ti(pr)-it + pi(pr)*1000, pi(pr))  ! Time to next event
@@ -150,7 +151,8 @@ program schedule
         end if
      end do
      
-     if(minval(li(1:np)).lt.0) then  ! Deadline missed
+     ! Deadline missed:
+     if(minval(li(1:np)).lt.0) then
         write(*,'(//,A,I0,A)', advance='no') '  At t=',it,', a deadline has been missed for process'
         do pr=1,np
            if(li(pr).lt.0) write(*,'(A)', advance='no') ' '//name(pr)
@@ -161,7 +163,37 @@ program schedule
      
      ro = ri
      write(*,*)
+  end do  ! it
+  
+  
+  ! 'Plot' an ascii scheduler:
+  write(*,*)
+  do pr=1,np
+     write(*,'(A4,3x)', advance='no') name(pr)
+     do it=1,time
+        if(run(it).eq.pr) then
+           write(*,'(A)', advance='no') '#'
+        else
+           write(*,'(A)', advance='no') ' '
+        end if
+        if( mod( ti(pr)-it + pi(pr)*1000, pi(pr)).eq.0 ) then  ! Next event
+           write(*,'(A)', advance='no') 'e'
+        else if( mod( ti(pr)+di(pr)-it + pi(pr)*1000, pi(pr)).eq.0 )  then ! Next deadline != event
+           write(*,'(A)', advance='no') 'd'
+        else
+           write(*,'(A)', advance='no') ' '
+        end if
+
+     end do  ! it
+     write(*,*)
+  end do  ! pr
+  
+  write(*,'(A4,I3)', advance='no') 't',0
+  do it=1,time
+     if(mod(it,5).eq.0) write(*,'(I10)', advance='no') it
   end do
+  write(*,*)
+  
   
   
   write(*,'(/,A,I0,A)') '  The system can be scheduled for ', time, ' time units.'
