@@ -5,11 +5,12 @@ program schedule
   use SUFR_system, only: find_free_io_unit, file_open_error_quit, file_read_error_quit, syntax_quit
   use SUFR_dummy, only: dumStr
   use SUFR_text, only: d2s
+  use SUFR_numerics, only: gcd,lcm
   
   implicit none
   integer, parameter :: nLines=99
   integer :: status,ip,ln, it,np,pr, ri,ro, time, ti(nLines),ci(nLines),di(nLines),pi(nLines), li(nLines),cc(nLines),tte(nLines)
-  integer :: gcd,lcm, optts,majFr
+  integer :: optts,majFr
   real(double) :: frac,load
   character :: inFile*(99), name(nLines), ccpr*(9),lipr*(9),ttepr*(9)
   
@@ -64,11 +65,11 @@ program schedule
   end if
   write(*,*)
   
-  optts = gcd(np, ci(1:np))
-  majFr = lcm(np, pi(1:np))
+  optts = gcd(ci(1:np))
+  majFr = lcm(pi(1:np))
   write(*,'(A,I0,A)') '  Optimal timeslice: ', optts, ' time units'
   write(*,'(A,I0,A)') '  Major frame: ', majFr, ' time units'
-  write(*,'(A,I0,A)') '  Minor frame: ', gcd(np, pi(1:np)), ' time units'
+  write(*,'(A,I0,A)') '  Minor frame: ', gcd(pi(1:np)), ' time units'
   write(*,*)
   
   ! Initial computation times and laxities:
@@ -142,83 +143,5 @@ program schedule
   write(*,'(/,A,I0,A)') '  The system can be scheduled for ', time, ' time units.'
   write(*,*)
 end program schedule
-!***********************************************************************************************************************************
-
-
-!***********************************************************************************************************************************
-!> \brief Computes the greatest common divisor (GCD) of two positive integers
-!!
-!! This function uses the Euclid method.  Given a and b, a >= b, the Euclid method goes as follows:
-!! - (1) dividing a by b yields a remainder c
-!! - (2) if c is zero, b is the GCD
-!! - (3) if c is non-zero, b becomes a and c becomes c and go back to step (1).  This process will continue until c is zero.
-!!
-!! \see http://www.cs.mtu.edu/~shene/COURSES/cs201/NOTES/chap04/gcd.html
-
-function gcd2(a,b)
-  implicit  none
-  integer, intent(in) :: a, b
-  integer :: gcd2, la,lb,lc
-  
-  ! Don't change the input parameters:
-  la = a
-  lb = b
-  
-  if(la.lt.lb) then       ! since a >= b must be true, they
-     lc = la              ! are swapped if a < b
-     la = lb
-     lb = lc
-  end if
-  
-  do                      ! now we have a <= b
-     lc = mod(la, lb)     !    compute c, the reminder
-     if (lc == 0) exit    !    if c is zero, we are done.  gcd = b
-     la = lb              !    otherwise, b becomes a
-     lb = lc              !    and c becomes b
-  end do                  !    go back
-  
-  gcd2 = lb
-  
-end function gcd2
-!***********************************************************************************************************************************
-
-
-!***********************************************************************************************************************************
-!> \brief Computes the greatest common divisor (GCD) for an array of positive integers
-!!
-
-function gcd(size, array)
-  implicit none
-  integer, intent(in) :: size,array(size)
-  integer :: gcd, gcd2, it
-  
-  gcd = maxval(array)
-  do it=1,size
-     gcd = gcd2(array(it),gcd)
-  end do
-  
-end function gcd
-!***********************************************************************************************************************************
-
-!***********************************************************************************************************************************
-!> \brief Computes the least common multiplier (LCM) of an array of positive integers
-!!
-!! \see https://en.wikipedia.org/wiki/Least_common_multiple#A_simple_algorithm
-
-function lcm(size, array)
-  implicit none
-  integer, intent(in) :: size,array(size)
-  integer :: lcm, larray(size), in
-  
-  larray = array
-  do
-     if(minval(larray).eq.maxval(larray)) exit  ! All values are equal, we have finished!
-     
-     in = minval(minloc(larray))  ! Index of the (first) smallest value in the array
-     larray(in) = larray(in) + array(in)
-  end do
-  
-  lcm = larray(1)
-end function lcm
 !***********************************************************************************************************************************
 
