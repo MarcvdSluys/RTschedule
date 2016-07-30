@@ -82,9 +82,15 @@ program schedule
      ! Print timestamp:
      write(*,'(2x,I0,A,I0,T9,A)', advance='no') it-1,'-',it, ''
      
+     
+     ! Determine running task:
+     ri = minval( minloc(li(1:np), cc(1:np).gt.0) )  ! Running task: minimum li and cc>0
+     if(ri*ro.ne.0) then
+        if(it.ne.1 .and. ri.ne.ro .and. cc(ro).gt.0 .and. li(ro).le.li(ri)) ri = ro  ! Keep the old task running if laxities are equal
+     end if
+     
      ! Print detailed data:
      do pr=1,np
-        !write(*,'(2x,3I3)', advance='no') cc(pr), li(pr), tte(pr)
         
         write(ccpr,'(I0)')  cc(pr)
         if(cc(pr).eq.0) then
@@ -96,23 +102,33 @@ program schedule
         end if
         
         
-        !write(*,'(2x,3A3)', advance='no') ccpr, lipr, ttepr
-        write(*,'(2x,A3)', advance='no') lipr
+        if(pr.eq.ri) then
+           lipr = '_'//trim(lipr)//'_'
+        else
+           lipr = ' '//trim(lipr)
+        end if
+        write(*,'(3x,A4)', advance='no') lipr
+        if(tte(pr).eq.0) then  ! New event
+           write(*,'(A)', advance='no') 'e'
+        else
+           write(*,'(A)', advance='no') ' '
+        end if
+        
      end do
-     !li = 1
      
-     ri = minval( minloc(li(1:np), cc(1:np).gt.0) )  ! Running task: minimum li and cc>0
-     if(ri*ro.ne.0) then
-        if(it.ne.1 .and. ri.ne.ro .and. cc(ro).gt.0 .and. li(ro).le.li(ri)) ri = ro  ! Keep the old task running if laxities are equal
-     end if
      
-     !write(*,'(5x,3I3)', advance='no') minval(li(1:np)), ri,ro
+     ! Print which task is running + its laxity:
      if(ri.eq.0) then
         write(*,'(5x,A)', advance='no') 'run: -, lax: 0'
      else
         write(*,'(5x,2(A,I0))', advance='no') 'run: ',ri, ', lax: ', li(ri)
      end if
-     if(ri.ne.ro) write(*,'(2x,A)', advance='no') 'switch'
+     if(ri.ne.ro) then
+        write(*,'(2x,A)', advance='no') 'switch'
+        if(ro.ne.0) then
+           if(cc(ro).gt.0) write(*,'(2x,A,I0,A)', advance='no') ' (', cc(ro), '>)'
+        end if
+     end if
      
      ! Current running job is ci, all other laxities decrease:
      do pr=1,np
@@ -126,10 +142,11 @@ program schedule
      
      
      do pr=1,np
-        tte(pr) = mod( ti(pr)+di(pr)-it + pi(pr)*1000, pi(pr))  ! Time to next event
-        if(tte(pr).eq.0) then
-           cc(pr) = ci(pr)
-           li(pr) = di(pr) - ci(pr)
+        tte(pr) = mod( ti(pr)+di(pr)-it + pi(pr)*1000, pi(pr))  ! Time to next deadline
+        !tte(pr) = mod( ti(pr)-it + pi(pr)*1000, pi(pr))  ! Time to next event
+        if(tte(pr).eq.0) then        ! New event occurs
+           cc(pr) = ci(pr)           ! Reset the computation time 
+           li(pr) = di(pr) - ci(pr)  ! Reset the laxity
         end if
      end do
      
@@ -145,6 +162,7 @@ program schedule
      ro = ri
      write(*,*)
   end do
+  
   
   write(*,'(/,A,I0,A)') '  The system can be scheduled for ', time, ' time units.'
   write(*,*)
