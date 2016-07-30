@@ -1,12 +1,15 @@
 !***********************************************************************************************************************************
 program schedule
+  use SUFR_kinds, only: double
   use SUFR_constants, only: set_SUFR_constants
   use SUFR_system, only: find_free_io_unit, file_open_error_quit, file_read_error_quit, syntax_quit
   use SUFR_dummy, only: dumStr
+  use SUFR_text, only: d2s
   
   implicit none
   integer, parameter :: nLines=99
   integer :: status,ip,ln, it,np,pr, ri,ro, time, ti(nLines),ci(nLines),di(nLines),pi(nLines), li(nLines),cc(nLines),tte(nLines)
+  real(double) :: frac,load
   character :: inFile*(99), name(nLines)
   
   call set_SUFR_constants()
@@ -40,14 +43,34 @@ program schedule
   close(ip)
   np = ln - 1
   write(*,'(2x,2(I0,A))') np, ' lines (processes) read; scheduling for ', time,' time units.'
+  write(*,*)
+  
+  
+  ! Print system load:
+  write(*,'(A)', advance='no') '  System load: '
+  load = 0.d0
+  do pr=1,np
+     frac = dble(ci(pr))/dble(pi(pr))
+     load = load + frac
+     write(*,'(A)', advance='no') d2s(frac,4)
+     if(pr.lt.np) write(*,'(A)', advance='no') ' + '
+  end do
+  write(*,'(A)') ' = '//d2s(load,4)
+  if(load.gt.1.d0) then
+     write(*,'(A)') '  The system is NOT schedulable indefinately... :-('
+  else
+     write(*,'(A)') '  The system is SCHEDULABLE! :-)'
+  end if
+  write(*,*)
   
   
   ! Initial computation times and laxities:
   cc = ci
   li = di - ci
   
+  
   do it=1,time  ! Note: this is the time unit that ENDS at t=ti
-     write(*,'(I0,A,I0,T9,A)', advance='no') it-1,'-',it, ''
+     write(*,'(2x,I0,A,I0,T9,A)', advance='no') it-1,'-',it, ''
      
      do pr=1,np
         write(*,'(2x,3I3)', advance='no') cc(pr), li(pr), tte(pr)
@@ -78,10 +101,20 @@ program schedule
         end if
      end do
      
+     if(minval(li(1:np)).lt.0) then  ! Deadline missed
+        write(*,'(//,A,I0,A)', advance='no') '  At t=',it,', a deadline has been missed for process'
+        do pr=1,np
+           if(li(pr).lt.0) write(*,'(A)', advance='no') ' '//name(pr)
+        end do
+        write(*,'(A,/)') ', while process '//name(ri)//' is running.'
+        stop
+     end if
+     
      ro = ri
      write(*,*)
   end do
   
+  write(*,'(/,A,I0,A)') '  The system can be scheduled for ', time, ' time units.'
   write(*,*)
 end program schedule
 !***********************************************************************************************************************************
