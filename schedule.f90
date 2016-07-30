@@ -11,6 +11,7 @@ program schedule
   integer, parameter :: nLines=99
   integer :: status,ip,ln, it,np,pr, ri,ro, time, ti(nLines),ci(nLines),di(nLines),pi(nLines), li(nLines),cc(nLines),tte(nLines)
   integer :: optts,majFr, run(nLines)
+  integer, allocatable :: ccs(:,:)
   real(double) :: frac,load
   character :: inFile*(99), name(nLines), ccpr*(9),lipr*(9),ttepr*(9)
   
@@ -76,6 +77,9 @@ program schedule
   cc = 0
   li = 0
   tte = 0
+  allocate(ccs(np,time))
+  ccs = 0
+  
   do pr=1,np
      if(ti(pr).eq.0) then
         cc(pr) = ci(pr)
@@ -137,6 +141,11 @@ program schedule
         end if
      end if
      
+     ! Save cc for later use:
+     ccs(1:np,it) = cc(1:np)
+     
+     
+     
      ! Current running job is ci, all other laxities decrease:
      do pr=1,np
         if(pr.eq.ri) then
@@ -177,7 +186,7 @@ program schedule
   call plot_ascii_scheduler(np,time, name,ti,pi,di, run, .true.)  ! Detail: .true./.false.
   
   ! Graphical plot:
-  call plot_scheduler(np,time, name,ti,pi,di, run)
+  call plot_scheduler(np,time, name,ti,pi,di, ccs,run)
   
   
   write(*,'(/,A,I0,A)') '  The system can be scheduled for ', time, ' time units.'
@@ -240,22 +249,24 @@ end subroutine plot_ascii_scheduler
 !***********************************************************************************************************************************
 !> \brief  Plot a graphical scheduler
 
-subroutine plot_scheduler(np,time, name,ti,pi,di, run)
-  !use SUFR_kinds, only: double
+subroutine plot_scheduler(np,time, name,ti,pi,di, ccs,run)
+  use SUFR_kinds, only: double
   use SUFR_numerics, only: plot_ranges
-  use plplot, only: plsdev, plsfnam, plbox, plmtex,plfill
+  use plplot, only: plsdev, plsfnam, plbox, plmtex,plfill,plptex
   
   implicit none
-  integer, intent(in) :: np,time, ti(np),pi(np),di(np), run(time)
+  integer, intent(in) :: np,time, ti(np),pi(np),di(np), ccs(np,time),run(time)
   integer :: it, pr, xsize,ysize
-  character :: name(np)
+  real(double) :: rat
+  character :: name(np), tmpStr*(9)
   
   
   call plsfnam('schedule_LLF.png')            ! Set file name
   call plsdev('pngcairo')                     ! Set plotting device: png
   
-  xsize = 1000  ! pixels
-  ysize = nint(dble(xsize) * (dble(np)/dble(time)) )
+  xsize = 1400  ! pixels
+  rat = max( dble(np)/dble(time), 0.15d0)
+  ysize = nint(dble(xsize) * rat )
   call plspage(0.d0,0.d0, xsize,ysize, 0,0)      ! Set page size: dpi, size, offset (px/mm)
   call plmycolours()                          ! White bg, proper colours
   
@@ -266,55 +277,64 @@ subroutine plot_scheduler(np,time, name,ti,pi,di, run)
   
   call plwidth(2.d0)                          ! Thick lines
   call pllsty(1)                              ! Full lines
-  call plcol0(2)                              ! Red lines
-  
-  
-  write(*,*)
-  do pr=1,np
-     write(*,'(A4,3x)', advance='no') name(pr)
-     do it=1,time
-        
-        ! Mark runtime:
-        if(run(it).eq.pr) then
-           write(*,'(A)', advance='no') '#'
-        else
-           write(*,'(A)', advance='no') ' '
-        end if
-        
-        ! Mark event/deadline:
-        if( mod( ti(pr)-it + pi(pr)*1000, pi(pr)).eq.0 ) then  ! Next event
-           write(*,'(A)', advance='no') 'e'
-        else if( mod( ti(pr)+di(pr)-it + pi(pr)*1000, pi(pr)).eq.0 )  then ! Next deadline != event
-           write(*,'(A)', advance='no') 'd'
-        else
-           write(*,'(A)', advance='no') ' '
-        end if
-        
-     end do  ! it
-     write(*,*)
-  end do  ! pr
-  
-  write(*,'(A4,I3)', advance='no') 't',0
-  do it=1,time
-     if(mod(it,5).eq.0) then
-        write(*,'(5x)', advance='no')
-        write(*,'(I5)', advance='no') it
-     end if
-  end do
-  write(*,*)
   
   do it=1,time
+     
+     ! Fill a square:
+     call plcol0(10)                              ! Grey squares
      if(run(it).ne.0) then
         call plfill( dble([it-1,it-1,it,it]), dble([run(it),run(it)-1,run(it)-1,run(it)]) )
      end if
-  end do
+     
+     ! Print remaining cpu time:
+     if(it.gt.1) then
+        if(run(it).ne.run(it-1) .and. run(it-1).ne.0) then
+           if(ccs(run(it-1),it).gt.0) then
+              
+              call plcol0(1)                              ! Black text
+              write(tmpStr,'(I0,A)') ccs(run(it-1),it), '>'
+              call plptex(dble(it-1), dble(run(it-1)-0.5d0), 1.d0,0.d0, 1.d0, trim(tmpStr))
+              
+           end if
+        end if
+     end if
+     
+  end do  ! it
+  
   
   call plcol0(1)                              ! Black box
   call plbox('BCGHNT',5.d0,5, 'BCGT',1.d0,0)  ! Plot box
   
   
-  call plmtex('B', 3.5d0, 0.5d0,0.5d0, 'Time')   ! Plot label for horizontal axis
-  call plmtex('L', 3.5d0, 0.5d0,0.5d0, 'Process')       ! Plot label for vertical axis
+  call plcol0(2)                              ! Blue lines
+  call plwidth(3.d0)                          ! Very thick lines
+  do it=0,time
+     
+     do pr=1,np
+        
+        ! Mark event/deadline:
+        if( mod( ti(pr)-it + pi(pr)*1000, pi(pr)).eq.0 )  call plarro( dble(it), dble(pr),  dble(it), dble(pr-1) )
+        
+        ! Mark deadline:
+        if( mod( ti(pr)+di(pr)-it + pi(pr)*1000, pi(pr)).eq.0 )  call plarro( dble(it), dble(pr-1),  dble(it), dble(pr) )
+        
+     end do  ! pr
+     
+  end do  ! it
+  
+  call plwidth(2.d0)                          ! Thick lines
+  
+  
+  
+  
+  
+  call plcol0(1)                                   ! Black text
+  call plmtex('B', 3.5d0, 0.5d0,0.5d0, 'Time')     ! Plot label for horizontal axis
+  call plmtex('L', 3.5d0, 0.5d0,0.5d0, 'Process')  ! Plot label for vertical axis
+  
+  do pr=1,np
+     call plptex(0.d0, dble(pr)-0.5d0, 1.d0,0.d0, 1.d0, trim(name(pr)))
+  end do
   
   call plend()                                ! Finish plot
   
@@ -346,4 +366,29 @@ subroutine plmycolours()
   call plscol0(15, 255,255,0)    ! Yellow
   
 end subroutine plmycolours
+!***********************************************************************************************************************************
+
+
+!***********************************************************************************************************************************
+!> \brief  Draw an arrow - only a line is drawn, arrows not supported in PLplot!
+!!
+!! \param x1  X-value of start point
+!! \param y1  Y-value of start point
+!! \param x2  X-value of end point
+!! \param y2  Y-value of end point
+
+subroutine plarro(x1,y1, x2,y2)
+  use plplot, only: plflt, plline, plpoin
+  
+  implicit none
+  real(kind=plflt), intent(in) :: x1,x2, y1,y2
+  real(kind=plflt) :: x(2),y(2)
+  
+  x = [x1,x2]
+  y = [y1,y2]
+  
+  call plline(x,y)
+  call plpoin([x(2)], [y(2)], 20)
+  
+end subroutine plarro
 !***********************************************************************************************************************************
