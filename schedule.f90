@@ -10,8 +10,8 @@ program schedule
   implicit none
   integer, parameter :: nLines=99
   integer :: status,ip,ln, it,np,pr, ri,ro, time, ti(nLines),ci(nLines),di(nLines),pi(nLines), li(nLines),cc(nLines),tte(nLines)
-  integer :: optts,majFr, run(nLines)
-  integer, allocatable :: ccs(:,:)
+  integer :: optts,majFr
+  integer, allocatable :: run(:), ccs(:,:)
   real(double) :: frac,load
   character :: inFile*(99), name(nLines), ccpr*(9),lipr*(9),ttepr*(9)
   
@@ -77,7 +77,7 @@ program schedule
   cc = 0
   li = 0
   tte = 0
-  allocate(ccs(np,time))
+  allocate(ccs(np,time), run(time))
   ccs = 0
   
   do pr=1,np
@@ -313,13 +313,12 @@ subroutine plot_scheduler(np,time, name,ti,pi,di, ccs,run)
      do pr=1,np
         
         ! Mark event/deadline:
-        if( mod( ti(pr)-it + pi(pr)*1000, pi(pr)).eq.0 )  call plarro( dble(it), dble(pr),  dble(it), dble(pr-1) )
+        if( mod( ti(pr)-it + pi(pr)*1000, pi(pr)).eq.0 )  call plarrow(2,  dble([it,it]), dble([pr,pr-1]), 0.2d0, 15.d0)  ! len = 0.2, flare 15d
         
         ! Mark deadline:
-        if( mod( ti(pr)+di(pr)-it + pi(pr)*1000, pi(pr)).eq.0 )  call plarro( dble(it), dble(pr-1),  dble(it), dble(pr) )
+        if( mod( ti(pr)+di(pr)-it + pi(pr)*1000, pi(pr)).eq.0 )  call plarrow( 2, dble([it,it]), dble([pr-1,pr]), 0.2d0, 15.d0)  ! len = 0.2, flare 15d
         
      end do  ! pr
-     
   end do  ! it
   
   call plwidth(2.d0)                          ! Thick lines
@@ -370,25 +369,38 @@ end subroutine plmycolours
 
 
 !***********************************************************************************************************************************
-!> \brief  Draw an arrow - only a line is drawn, arrows not supported in PLplot!
-!!
-!! \param x1  X-value of start point
-!! \param y1  Y-value of start point
-!! \param x2  X-value of end point
-!! \param y2  Y-value of end point
-
-subroutine plarro(x1,y1, x2,y2)
-  use plplot, only: plflt, plline, plpoin
+subroutine plarrow(Narr, Xarr,Yarr, arrowLen, flare)
+  use SUFR_constants, only: d2r !,r2d
+  use plplot, only: plflt, plline, plfill
   
   implicit none
-  real(kind=plflt), intent(in) :: x1,x2, y1,y2
-  real(kind=plflt) :: x(2),y(2)
+  integer :: Narr
+  real(kind=plflt), intent(in) :: Xarr(Narr),Yarr(Narr), arrowLen,flare
+  real(kind=plflt) :: dX,dY, dX1,dX2, dY1,dY2, alpha,alpha1,alpha2
   
-  x = [x1,x2]
-  y = [y1,y2]
   
-  call plline(x,y)
-  call plpoin([x(2)], [y(2)], 20)
+  call plline(Xarr, Yarr)        ! Plot line
   
-end subroutine plarro
+  dX = Xarr(Narr) - Xarr(Narr-1)
+  dY = Yarr(Narr) - Yarr(Narr-1)
+  
+  alpha = atan2(dY,dX)
+  alpha1 = alpha - flare*d2r
+  alpha2 = alpha + flare*d2r
+  
+  dX1 = -arrowLen * cos(alpha1)
+  dY1 = -arrowLen * sin(alpha1)
+  dX2 = -arrowLen * cos(alpha2)
+  dY2 = -arrowLen * sin(alpha2)
+  
+  !call plline([Xarr(Narr), Xarr(Narr)+dX1], [Yarr(Narr), Yarr(Narr)+dY1])        ! Plot first head line
+  !call plline([Xarr(Narr), Xarr(Narr)+dX2], [Yarr(Narr), Yarr(Narr)+dY2])        ! Plot second head line
+  !
+  !call plline([Xarr(Narr)+dX1, Xarr(Narr)+dX2], [Yarr(Narr)+dY1, Yarr(Narr)+dY2])        ! Plot third line for triangular head
+  
+  call plpsty(0)                                                                                           ! Filled arrow head
+  call plfill([Xarr(Narr), Xarr(Narr)+dX1, Xarr(Narr)+dX2], [Yarr(Narr), Yarr(Narr)+dY1, Yarr(Narr)+dY2])  ! Plot line
+  
+  
+end subroutine plarrow
 !***********************************************************************************************************************************
