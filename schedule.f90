@@ -102,10 +102,16 @@ program schedule
      !li = 1
      
      ri = minval( minloc(li(1:np), cc(1:np).gt.0) )  ! Running task: minimum li and cc>0
-     if(it.ne.1 .and. ri.ne.ro .and. cc(ro).gt.0 .and. li(ro).le.li(ri)) ri = ro  ! Keep the old task running if laxities are equal
+     if(ri*ro.ne.0) then
+        if(it.ne.1 .and. ri.ne.ro .and. cc(ro).gt.0 .and. li(ro).le.li(ri)) ri = ro  ! Keep the old task running if laxities are equal
+     end if
      
      !write(*,'(5x,3I3)', advance='no') minval(li(1:np)), ri,ro
-     write(*,'(5x,2(A,I0))', advance='no') 'run: ',ri, ', lax: ', li(ri)
+     if(ri.eq.0) then
+        write(*,'(5x,A)', advance='no') 'run: -, lax: 0'
+     else
+        write(*,'(5x,2(A,I0))', advance='no') 'run: ',ri, ', lax: ', li(ri)
+     end if
      if(ri.ne.ro) write(*,'(2x,A)', advance='no') 'switch'
      
      ! Current running job is ci, all other laxities decrease:
