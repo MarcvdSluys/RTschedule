@@ -9,11 +9,10 @@ program schedule
   
   implicit none
   integer, parameter :: nLines=99
-  integer :: status,ip,ln, it,np,pr, ri,ro, time, ti(nLines),ci(nLines),di(nLines),pi(nLines), li(nLines),cc(nLines),tte(nLines)
-  integer :: optts,majFr, Nopts
-  integer, allocatable :: run(:), ccs(:,:)
+  integer :: status,ip,ln, np,pr, time, ti(nLines),ci(nLines),di(nLines),pi(nLines)
+  integer :: optts,majFr
   real(double) :: frac,load
-  character :: inFile*(99), name(nLines), ccpr*(9),lipr*(9),ttepr*(9)
+  character :: inFile*(99), name(nLines)
   
   call set_SUFR_constants()
   
@@ -24,9 +23,6 @@ program schedule
   open(unit=ip,form='formatted',status='old',action='read',position='rewind',file=trim(inFile),iostat=status)
   if(status.ne.0) call file_open_error_quit(trim(inFile), 1, 1)  ! 1: input file, 1: status: not ok
   
-  li = 0
-  ro = 1
-  cc = 0
   
   ! Read file header:
   do ln=1,1
@@ -73,7 +69,32 @@ program schedule
   write(*,'(A,I0,A)') '  Minor frame: ', gcd(pi(1:np)), ' time units'
   write(*,*)
   
+  
+  ! Create a LLF schedule:
+  call schedule_LLF(np,time, name, ti,ci,di,pi)
+  
+  write(*,*)
+end program schedule
+!***********************************************************************************************************************************
+
+
+
+
+!***********************************************************************************************************************************
+subroutine schedule_LLF(np,time, name, ti,ci,di,pi)
+  use SUFR_constants, only: set_SUFR_constants
+  use SUFR_system, only: find_free_io_unit, file_open_error_quit, file_read_error_quit, syntax_quit
+  use SUFR_text, only: d2s
+  use SUFR_numerics, only: gcd,lcm
+  
+  implicit none
+  integer, intent(in) :: np,time, ti(np),ci(np),di(np),pi(np)
+  integer :: it,pr, ri,ro, li(np),cc(np),tte(np), Nopts
+  integer, allocatable :: run(:), ccs(:,:)
+  character :: name(np), ccpr*(9),lipr*(9),ttepr*(9)
+  
   ! Initial computation times and laxities:
+  ro = 1
   cc = 0
   li = 0
   tte = 0
@@ -201,10 +222,9 @@ program schedule
   
   
   write(*,'(/,A,I0,A)') '  The system can be scheduled for ', time, ' time units.'
-  write(*,*)
-end program schedule
+  
+end subroutine schedule_LLF
 !***********************************************************************************************************************************
-
 
 
 !***********************************************************************************************************************************
