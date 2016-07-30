@@ -75,6 +75,7 @@ program schedule
   ! Initial computation times and laxities:
   cc = 0
   li = 0
+  tte = 0
   do pr=1,np
      if(ti(pr).eq.0) then
         cc(pr) = ci(pr)
@@ -175,6 +176,9 @@ program schedule
   call plot_ascii_scheduler(np,time, name,ti,pi,di, run, .false.)  ! Detail: .true./.false.
   call plot_ascii_scheduler(np,time, name,ti,pi,di, run, .true.)  ! Detail: .true./.false.
   
+  ! Graphical plot:
+  call plot_scheduler(np,time, name,ti,pi,di, run)
+  
   
   write(*,'(/,A,I0,A)') '  The system can be scheduled for ', time, ' time units.'
   write(*,*)
@@ -232,3 +236,114 @@ subroutine plot_ascii_scheduler(np,time, name,ti,pi,di, run, detail)
 end subroutine plot_ascii_scheduler
 !***********************************************************************************************************************************
   
+
+!***********************************************************************************************************************************
+!> \brief  Plot a graphical scheduler
+
+subroutine plot_scheduler(np,time, name,ti,pi,di, run)
+  !use SUFR_kinds, only: double
+  use SUFR_numerics, only: plot_ranges
+  use plplot, only: plsdev, plsfnam, plbox, plmtex,plfill
+  
+  implicit none
+  integer, intent(in) :: np,time, ti(np),pi(np),di(np), run(time)
+  integer :: it, pr, xsize,ysize
+  character :: name(np)
+  
+  
+  call plsfnam('schedule_LLF.png')            ! Set file name
+  call plsdev('pngcairo')                     ! Set plotting device: png
+  
+  xsize = 1000  ! pixels
+  ysize = nint(dble(xsize) * (dble(np)/dble(time)) )
+  call plspage(0.d0,0.d0, xsize,ysize, 0,0)      ! Set page size: dpi, size, offset (px/mm)
+  call plmycolours()                          ! White bg, proper colours
+  
+  call plinit()                               ! Initialise environment; Call after plsdev(), plssub(), plspage()
+  call plbop()                                ! Begin a new page
+  call plvpor(0.07d0,0.96d0, 1.d0/dble(np-1),0.96d0)    ! Set view port in plot window
+  call plwind(0,dble(time), dble(np),0)       ! Set view port in world coordinates
+  
+  call plwidth(2.d0)                          ! Thick lines
+  call pllsty(1)                              ! Full lines
+  call plcol0(2)                              ! Red lines
+  
+  
+  write(*,*)
+  do pr=1,np
+     write(*,'(A4,3x)', advance='no') name(pr)
+     do it=1,time
+        
+        ! Mark runtime:
+        if(run(it).eq.pr) then
+           write(*,'(A)', advance='no') '#'
+        else
+           write(*,'(A)', advance='no') ' '
+        end if
+        
+        ! Mark event/deadline:
+        if( mod( ti(pr)-it + pi(pr)*1000, pi(pr)).eq.0 ) then  ! Next event
+           write(*,'(A)', advance='no') 'e'
+        else if( mod( ti(pr)+di(pr)-it + pi(pr)*1000, pi(pr)).eq.0 )  then ! Next deadline != event
+           write(*,'(A)', advance='no') 'd'
+        else
+           write(*,'(A)', advance='no') ' '
+        end if
+        
+     end do  ! it
+     write(*,*)
+  end do  ! pr
+  
+  write(*,'(A4,I3)', advance='no') 't',0
+  do it=1,time
+     if(mod(it,5).eq.0) then
+        write(*,'(5x)', advance='no')
+        write(*,'(I5)', advance='no') it
+     end if
+  end do
+  write(*,*)
+  
+  do it=1,time
+     if(run(it).ne.0) then
+        call plfill( dble([it-1,it-1,it,it]), dble([run(it),run(it)-1,run(it)-1,run(it)]) )
+     end if
+  end do
+  
+  call plcol0(1)                              ! Black box
+  call plbox('BCGHNT',5.d0,5, 'BCGT',1.d0,0)  ! Plot box
+  
+  
+  call plmtex('B', 3.5d0, 0.5d0,0.5d0, 'Time')   ! Plot label for horizontal axis
+  call plmtex('L', 3.5d0, 0.5d0,0.5d0, 'Process')       ! Plot label for vertical axis
+  
+  call plend()                                ! Finish plot
+  
+end subroutine plot_scheduler
+!***********************************************************************************************************************************
+  
+
+!***********************************************************************************************************************************
+!> \brief  Create a white background and define my colours in PLplot
+
+subroutine plmycolours()
+  implicit none
+  
+  call plscol0(0,  255,255,255)  ! Default BG, white
+  call plscol0(1,  0,0,0)        ! Default foreground, black
+  call plscol0(2,  255,0,0)      ! Red
+  call plscol0(3,  0,191,0)      ! Green for white bg
+  call plscol0(4,  0,0,255)      ! Blue
+  call plscol0(5,  0,191,191)    ! Magenta -> darker for white bg
+  call plscol0(6,  191,0,191)    ! Cyan -> darker
+  call plscol0(7,  255,127,0)    ! Orange
+  call plscol0(8,  63,255,63)    ! Light green
+  call plscol0(9,  127,63,0)     ! Brown
+  call plscol0(10, 150,150,150)  ! Light grey for white bg (170)
+  call plscol0(11, 84,84,84)     ! Dark grey for white bg
+  call plscol0(12, 255,127,127)  ! Pink/salmon
+  call plscol0(13, 150,0,0)      ! Dark red
+  call plscol0(14, 255,0,255)    ! Cyan
+  call plscol0(15, 255,255,0)    ! Yellow
+  
+end subroutine plmycolours
+!***********************************************************************************************************************************
