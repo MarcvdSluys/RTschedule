@@ -10,7 +10,7 @@ program schedule
   implicit none
   integer, parameter :: nLines=99
   integer :: status,ip,ln, it,np,pr, ri,ro, time, ti(nLines),ci(nLines),di(nLines),pi(nLines), li(nLines),cc(nLines),tte(nLines)
-  integer :: optts,majFr
+  integer :: optts,majFr, Nopts
   integer, allocatable :: run(:), ccs(:,:)
   real(double) :: frac,load
   character :: inFile*(99), name(nLines), ccpr*(9),lipr*(9),ttepr*(9)
@@ -89,27 +89,29 @@ program schedule
   
   do it=1,time  ! Note: this is the time unit that ENDS at t=ti
      
+     ! Save cc for later use:
+     ccs(1:np,it) = cc(1:np)
+     
      ! Print timestamp:
      write(*,'(2x,I0,A,I0,T9,A)', advance='no') it-1,'-',it, ''
      
      
      ! Determine running task:
-     ri = minval( minloc(li(1:np), cc(1:np).gt.0) )  ! Running task: minimum li and cc>0
+     ri = minloc(li(1:np), 1, cc(1:np).gt.0)  ! Running task: minimum li and cc>0
      if(ri*ro.ne.0) then
         if(it.ne.1 .and. ri.ne.ro .and. cc(ro).gt.0 .and. li(ro).le.li(ri)) ri = ro  ! Keep the old task running if laxities are equal
      end if
-     run(it) = ri
+     run(it) = ri  ! Save for later use
      
      ! Print detailed data:
      do pr=1,np
         
-        write(ccpr,'(I0)')  cc(pr)
+        write(ccpr,'(I0)') cc(pr)
+        write(lipr,'(I0)')  li(pr)
+        write(ttepr,'(I0)') tte(pr)
         if(cc(pr).eq.0) then
            lipr = '-'
            ttepr = '-'
-        else
-           write(lipr,'(I0)')  li(pr)
-           write(ttepr,'(I0)') tte(pr)
         end if
         
         
@@ -118,11 +120,14 @@ program schedule
         else
            lipr = ' '//trim(lipr)
         end if
-        write(*,'(3x,A4)', advance='no') lipr
+        write(*,'(5x,A4)', advance='no') lipr
+        !write(*,'(A2)', advance='no') trim(ccpr)
+        !write(*,'(A2)', advance='no') trim(ttepr)
+        
         if(it.ge.ti(pr) .and. tte(pr).eq.0) then  ! New event
-           write(*,'(A)', advance='no') 'e'
+           write(*,'(1x,A)', advance='no') 'e'
         else
-           write(*,'(A)', advance='no') ' '
+           write(*,'(1x,A)', advance='no') ' '
         end if
         
      end do
@@ -134,15 +139,21 @@ program schedule
      else
         write(*,'(5x,3(A,I0))', advance='no') 'run: ',ri, ',  lax: ', li(ri), ',  cpu: ', cc(ri)
      end if
-     if(ri.ne.ro) then
+     if(it.gt.1 .and. ri.ne.ro) then
         write(*,'(2x,A)', advance='no') 'switch'
         if(ro.ne.0) then
-           if(cc(ro).gt.0) write(*,'(A,I0,A)', advance='no') ' (', cc(ro), '>)'
+           if(cc(ro).gt.0) write(*,'(A,I0,A)', advance='no') ' ('//trim(name(ro))//':',cc(ro), '>)'
         end if
      end if
      
-     ! Save cc for later use:
-     ccs(1:np,it) = cc(1:np)
+     Nopts = count(li(1:np).eq.minval(li(1:np), cc(1:np).gt.0) .and. cc(1:np).gt.0)  ! Number of tasks with Ci>0 and lowest laxity
+     if(Nopts.gt.1) then   ! Have a choice
+        if(ri.eq.ro) then  ! No choice - keep current task running
+           write(*,'(2x,A)', advance='no') 'keep same task'
+        else               ! True choice
+           write(*,'(2x,A)', advance='no') 'Choice!'
+        end if
+     end if
      
      
      
