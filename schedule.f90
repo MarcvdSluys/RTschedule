@@ -33,9 +33,9 @@ program schedule
   end do
   
   ! Read file body:
+  write(*,*)
   read(ip,*) dumStr, time
-  print*,time
-  write(*,'(9A5)') 'name', 'ti','ci','di','pi'
+  write(*,'(9A5)') 'Name', 'ti','ci','di','pi'
   do ln=1,nLines
      read(ip,*,iostat=status) name(ln), ti(ln),ci(ln),di(ln),pi(ln)
      if(status.lt.0) exit
