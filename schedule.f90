@@ -172,6 +172,27 @@ program schedule
   
   
   ! 'Plot' an ascii scheduler:
+  call plot_ascii_scheduler(np,time, name,ti,pi,di, run, .false.)  ! Detail: .true./.false.
+  call plot_ascii_scheduler(np,time, name,ti,pi,di, run, .true.)  ! Detail: .true./.false.
+  
+  
+  write(*,'(/,A,I0,A)') '  The system can be scheduled for ', time, ' time units.'
+  write(*,*)
+end program schedule
+!***********************************************************************************************************************************
+
+
+
+!***********************************************************************************************************************************
+!> \brief  'Plot' an ascii scheduler
+
+subroutine plot_ascii_scheduler(np,time, name,ti,pi,di, run, detail)
+  implicit none
+  integer, intent(in) :: np,time, ti(np),pi(np),di(np), run(time)
+  logical, intent(in) :: detail
+  integer :: it, pr
+  character :: name(np)
+  
   write(*,*)
   do pr=1,np
      write(*,'(A4,3x)', advance='no') name(pr)
@@ -185,28 +206,29 @@ program schedule
         end if
         
         ! Mark event/deadline:
-        if( mod( ti(pr)-it + pi(pr)*1000, pi(pr)).eq.0 ) then  ! Next event
-           write(*,'(A)', advance='no') 'e'
-        else if( mod( ti(pr)+di(pr)-it + pi(pr)*1000, pi(pr)).eq.0 )  then ! Next deadline != event
-           write(*,'(A)', advance='no') 'd'
-        else
-           write(*,'(A)', advance='no') ' '
+        if(detail) then
+           if( mod( ti(pr)-it + pi(pr)*1000, pi(pr)).eq.0 ) then  ! Next event
+              write(*,'(A)', advance='no') 'e'
+           else if( mod( ti(pr)+di(pr)-it + pi(pr)*1000, pi(pr)).eq.0 )  then ! Next deadline != event
+              write(*,'(A)', advance='no') 'd'
+           else
+              write(*,'(A)', advance='no') ' '
+           end if
         end if
-
+        
      end do  ! it
      write(*,*)
   end do  ! pr
   
   write(*,'(A4,I3)', advance='no') 't',0
   do it=1,time
-     if(mod(it,5).eq.0) write(*,'(I10)', advance='no') it
+     if(mod(it,5).eq.0) then
+        if(detail) write(*,'(5x)', advance='no')
+        write(*,'(I5)', advance='no') it
+     end if
   end do
   write(*,*)
   
-  
-  
-  write(*,'(/,A,I0,A)') '  The system can be scheduled for ', time, ' time units.'
-  write(*,*)
-end program schedule
+end subroutine plot_ascii_scheduler
 !***********************************************************************************************************************************
-
+  
