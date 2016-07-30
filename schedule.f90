@@ -73,9 +73,14 @@ program schedule
   write(*,*)
   
   ! Initial computation times and laxities:
-  cc = ci
-  li = di - ci
-  
+  cc = 0
+  li = 0
+  do pr=1,np
+     if(ti(pr).eq.0) then
+        cc(pr) = ci(pr)
+        li(pr) = di(pr) - ci(pr)
+     end if
+  end do
   
   do it=1,time  ! Note: this is the time unit that ENDS at t=ti
      
@@ -109,7 +114,7 @@ program schedule
            lipr = ' '//trim(lipr)
         end if
         write(*,'(3x,A4)', advance='no') lipr
-        if(tte(pr).eq.0) then  ! New event
+        if(it.ge.ti(pr) .and. tte(pr).eq.0) then  ! New event
            write(*,'(A)', advance='no') 'e'
         else
            write(*,'(A)', advance='no') ' '
@@ -119,15 +124,15 @@ program schedule
      
      
      ! Print which task is running + its laxity:
-     if(ri.eq.0) then
-        write(*,'(5x,A)', advance='no') 'run: -, lax: 0'
+     if(ri.eq.0) then  ! No task is running
+        write(*,'(5x,A)', advance='no') 'run: -,  lax: -,  cpu: -'
      else
-        write(*,'(5x,2(A,I0))', advance='no') 'run: ',ri, ', lax: ', li(ri)
+        write(*,'(5x,3(A,I0))', advance='no') 'run: ',ri, ',  lax: ', li(ri), ',  cpu: ', cc(ri)
      end if
      if(ri.ne.ro) then
         write(*,'(2x,A)', advance='no') 'switch'
         if(ro.ne.0) then
-           if(cc(ro).gt.0) write(*,'(2x,A,I0,A)', advance='no') ' (', cc(ro), '>)'
+           if(cc(ro).gt.0) write(*,'(A,I0,A)', advance='no') ' (', cc(ro), '>)'
         end if
      end if
      
@@ -136,7 +141,7 @@ program schedule
         if(pr.eq.ri) then
            cc(pr) = cc(pr) - 1
         else
-           li(pr) = li(pr) - 1
+           if(it.ge.ti(pr)) li(pr) = li(pr) - 1
         end if
      end do
      
@@ -171,11 +176,15 @@ program schedule
   do pr=1,np
      write(*,'(A4,3x)', advance='no') name(pr)
      do it=1,time
+        
+        ! Mark runtime:
         if(run(it).eq.pr) then
            write(*,'(A)', advance='no') '#'
         else
            write(*,'(A)', advance='no') ' '
         end if
+        
+        ! Mark event/deadline:
         if( mod( ti(pr)-it + pi(pr)*1000, pi(pr)).eq.0 ) then  ! Next event
            write(*,'(A)', advance='no') 'e'
         else if( mod( ti(pr)+di(pr)-it + pi(pr)*1000, pi(pr)).eq.0 )  then ! Next deadline != event
