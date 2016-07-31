@@ -89,15 +89,13 @@ subroutine schedule_LLF(np,time, name, ti,ci,di,pi)
   
   implicit none
   integer, intent(in) :: np,time, ti(np),ci(np),di(np),pi(np)
-  integer :: it,pr, ri,ro, li(np),cc(np),tte(np), Nopts, nSwitch
+  integer :: it,pr, ri,ro, li(np),cc(np),tte(np), Nopts, nSwitch,nMiss
   integer, allocatable :: run(:), ccs(:,:)
   character :: name(np), ccpr*(9),lipr*(9),ttepr*(9)
   
-  ro = 1
-  tte = 0
-  allocate(ccs(np,time), run(time))
-  ccs = 0
-  nSwitch = 0
+  ro=1; tte=0
+  allocate(ccs(np,time), run(time));  ccs = 0
+  nSwitch=0; nMiss=0
   
   ! Initial computation times and laxities:
   cc=0; li=0
@@ -113,16 +111,31 @@ subroutine schedule_LLF(np,time, name, ti,ci,di,pi)
      ! Save cc for later use:
      ccs(1:np,it) = cc(1:np)
      
-     ! Print timestamp:
-     write(*,'(2x,I0,A,I0,T9,A)', advance='no') it-1,'-',it, ''
-     
-     
+
      ! Determine running task:
      ri = minloc(li(1:np), 1, cc(1:np).gt.0)  ! Running task: minimum li and cc>0
      if(ri*ro.ne.0) then
         if(it.ne.1 .and. ri.ne.ro .and. cc(ro).gt.0 .and. li(ro).le.li(ri)) ri = ro  ! Keep the old task running if laxities are equal
      end if
      run(it) = ri  ! Save for later use
+     
+     
+     ! Deadline missed:
+     if(minval(li(1:np)).lt.0) then
+        write(*,'(//,A,I0,A)', advance='no') '   ***   At t=',it,', a deadline is missed for process'
+        do pr=1,np
+           if(li(pr).lt.0) then
+              write(*,'(A)', advance='no') ' '//name(pr)
+              nMiss = nMiss + 1
+           end if
+        end do
+        write(*,'(A,//)') ', while process '//name(ri)//' is running.   ***'
+        !stop
+     end if
+     
+     
+     ! Print timestamp:
+     write(*,'(2x,I0,A,I0,T9,A)', advance='no') it-1,'-',it, ''
      
      ! Print detailed data:
      do pr=1,np
@@ -203,16 +216,6 @@ subroutine schedule_LLF(np,time, name, ti,ci,di,pi)
         end if
      end do
      
-     ! Deadline missed:
-     if(minval(li(1:np)).lt.0) then
-        write(*,'(//,A,I0,A)', advance='no') '  At t=',it,', a deadline has been missed for process'
-        do pr=1,np
-           if(li(pr).lt.0) write(*,'(A)', advance='no') ' '//name(pr)
-        end do
-        write(*,'(A,/)') ', while process '//name(ri)//' is running.'
-        stop
-     end if
-     
      ro = ri
      write(*,*)
   end do  ! it
@@ -225,8 +228,11 @@ subroutine schedule_LLF(np,time, name, ti,ci,di,pi)
   ! Graphical plot:
   call plot_scheduler(np,time, name,ti,pi,di, ccs,run)
   
-  
-  write(*,'(/,A,I0,A)') '  The system can be scheduled for ', time, ' time units.'
+  if(nMiss.eq.0) then
+     write(*,'(/,A,I0,A)') '  The system can be scheduled for ', time, ' time units.'
+  else
+     write(*,'(/,2x,I0,A,I0,A)') nMiss, ' DEADLINES HAVE BEEN MISSED in ', time, ' time units.'
+  end if
   write(*,'(2x,I0,A)') nSwitch, ' task switches ('//d2s(dble(time)/dble(nSwitch+1),2)//' time units per run).'
   
 end subroutine schedule_LLF
