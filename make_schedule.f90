@@ -14,6 +14,14 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load)
   real(double) :: maxLoad
   character :: ccpr*(9),priopr*(9),ttepr*(9)
   
+
+  write(*,'(/)')
+  write(*,'(A)') '  **************************************************************************************************************'
+  write(*,'(A,T110,A)') '  ***   '//trim(sched)//' SCHEDULER', '***'
+  write(*,'(A)') '  **************************************************************************************************************'
+  write(*,*)
+  
+  
   cc=0; prio=0
   ro=1; tte=0
   allocate(ccs(np,time), run(time));  ccs = 0
@@ -75,7 +83,7 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load)
      
      ! Report missed deadlines:
      if( maxval(ccs(:, it), mod( ti+di-it + pi*1000, pi).eq.0).gt.1 ) then  ! The maximum Ci of tasks with Di=0 is >= 2
-        write(*,'(//,A,I0,A)', advance='no') '   ***   At t=',it,', a deadline is missed for process'
+        write(*,'(//,A,I0,A)', advance='no') '   ***   At t=',it,', a DEADLINE IS MISSED for process'
         do pr=1,np
            if( mod( ti(pr)+di(pr)-it + pi(pr)*1000, pi(pr)).eq.0 .and. ccs(pr,it).gt.1 ) then
               write(*,'(A)', advance='no') ' '//trim(name(pr))
@@ -104,8 +112,8 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load)
               ccpr = ' '//trim(ccpr)
            end if
            
-           write(*,'(2x,A4)', advance='no') ccpr
-           write(*,'(2x,I4)', advance='no') tte(pr)
+           write(*,'(5x,A4)', advance='no') ccpr
+           !write(*,'(2x,I4)', advance='no') tte(pr)
         case('LLF')
            if(cc(pr).eq.0) then
               priopr = '-'
@@ -209,8 +217,8 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load)
   
   
   ! 'Plot' an ascii scheduler:
-  call plot_ascii_scheduler(np,time, name,ti,pi,di, run, .false.)  ! Detail: .true./.false.
-  call plot_ascii_scheduler(np,time, name,ti,pi,di, run, .true.)  ! Detail: .true./.false.
+  call plot_ascii_scheduler(sched, np,time, name,ti,pi,di, run, .false.)  ! Detail: .true./.false.
+  call plot_ascii_scheduler(sched, np,time, name,ti,pi,di, run, .true.)  ! Detail: .true./.false.
   
   
   ! Graphical plot:

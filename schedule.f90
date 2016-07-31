@@ -93,6 +93,10 @@ subroutine print_system_data(np,time, name,ti,ci,di,pi, load)
   real(double) :: frac
   
   ! Print task list:
+  write(*,'(A)') '  **************************************************************************************************************'
+  write(*,'(A,T110,A)') '  ***   GENERAL TASK DATA', '***'
+  write(*,'(A)') '  **************************************************************************************************************'
+  write(*,*)
   write(*,'(2x,A)') 'Task list:'
   write(*,'(2x,9A5)') 'Name', 'ti','ci','di','pi'
   do pr=1,np
@@ -111,7 +115,7 @@ subroutine print_system_data(np,time, name,ti,ci,di,pi, load)
   
   
   ! Print system load:
-  write(*,'(A)', advance='no') '  System load: '
+  write(*,'(/,A)', advance='no') '  System load: '
   load = 0.d0
   do pr=1,np
      frac = dble(ci(pr))/dble(pi(pr))
@@ -128,6 +132,7 @@ subroutine print_system_data(np,time, name,ti,ci,di,pi, load)
   write(*,*)
   
   optts = gcd(ci(1:np))
+  write(*,*)
   write(*,'(A,I0,A)') '  Optimal timeslice: ', optts, ' time units'
   write(*,'(A,I0,A)') '  Major frame: ', majFr, ' time units'
   write(*,'(A,I0,A)') '  Minor frame: ', gcd(pi(1:np)), ' time units'
@@ -141,14 +146,16 @@ end subroutine print_system_data
 !***********************************************************************************************************************************
 !> \brief  'Plot' an ascii scheduler
 
-subroutine plot_ascii_scheduler(np,time, name,ti,pi,di, run, detail)
+subroutine plot_ascii_scheduler(sched, np,time, name,ti,pi,di, run, detail)
   implicit none
   integer, intent(in) :: np,time, ti(np),pi(np),di(np), run(time)
-  character, intent(in) :: name(np)*(9)
+  character, intent(in) :: sched*(9), name(np)*(9)
   logical, intent(in) :: detail
   integer :: it, pr
   
   write(*,*)
+  write(*,'(A)') '  '//trim(sched)//' ASCII schedule:'
+  
   do pr=1,np
      write(*,'(A4,3x)', advance='no') trim(name(pr))
      do it=1,time
