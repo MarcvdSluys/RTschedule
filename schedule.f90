@@ -7,7 +7,7 @@ program schedule
   integer, parameter :: nProcMax=19  ! Maximum number of processes to expect
   integer :: np, time, ti(nProcMax),ci(nProcMax),di(nProcMax),pi(nProcMax)
   real(double) :: load
-  character :: name(nProcMax)*(9)
+  character :: sched*(9), name(nProcMax)*(9)
   
   ! Initialise libSUFR:
   call set_SUFR_constants()
@@ -20,11 +20,13 @@ program schedule
   
   
   ! Create an RM schedule:
-  call schedule_RM(np,time, name, ti,ci,di,pi, load)
+  sched = 'RM'  ! RM algorithm
+  call make_schedule(sched, np,time, name, ti,ci,di,pi, load)
   
   
   ! Create a LLF schedule:
-  !call schedule_LLF(np,time, name, ti,ci,di,pi)
+  sched = 'LLF'  ! LLF algorithm
+  call make_schedule(sched, np,time, name, ti,ci,di,pi, load)
   
   write(*,*)
 end program schedule
@@ -189,34 +191,34 @@ end subroutine plot_ascii_scheduler
 !***********************************************************************************************************************************
 !> \brief  Plot a graphical scheduler
 
-subroutine plot_scheduler(np,time, name,ti,pi,di, ccs,run)
+subroutine plot_scheduler(sched, np,time, name,ti,pi,di, ccs,run)
   use SUFR_kinds, only: double
   use plplot, only: plsdev, plsfnam, plbox, plmtex,plfill,plptex, plpoin
   
   implicit none
   integer, intent(in) :: np,time, ti(np),pi(np),di(np), ccs(np,time),run(time)
-  character, intent(in) :: name(np)*(9)
+  character, intent(in) :: sched*(9), name(np)*(9)
   integer :: it, pr, xsize,ysize
   real(double) :: rat
   character :: tmpStr*(9)
   
   
-  call plsfnam('schedule_LLF.png')            ! Set file name
-  call plsdev('pngcairo')                     ! Set plotting device: png
+  call plsfnam('schedule_'//trim(sched)//'.png')  ! Set file name
+  call plsdev('pngcairo')                         ! Set plotting device: png
   
   xsize = 1400  ! pixels
   rat = max( dble(np)/dble(time), 0.15d0)
   ysize = nint(dble(xsize) * rat )
-  call plspage(0.d0,0.d0, xsize,ysize, 0,0)      ! Set page size: dpi, size, offset (px/mm)
-  call plmycolours()                          ! White bg, proper colours
+  call plspage(0.d0,0.d0, xsize,ysize, 0,0)       ! Set page size: dpi, size, offset (px/mm)
+  call plmycolours()                              ! White bg, proper colours
   
-  call plinit()                               ! Initialise environment; Call after plsdev(), plssub(), plspage()
-  call plbop()                                ! Begin a new page
-  call plvpor(0.07d0,0.96d0, 1.d0/dble(np),0.96d0)    ! Set view port in plot window
-  call plwind(0,dble(time), dble(np),0)       ! Set view port in world coordinates
+  call plinit()                                   ! Initialise environment; Call after plsdev(), plssub(), plspage()
+  call plbop()                                    ! Begin a new page
+  call plvpor(0.07d0,0.96d0, 1.d0/dble(np),0.96d0)   ! Set view port in plot window
+  call plwind(0,dble(time), dble(np),0)           ! Set view port in world coordinates
   
-  call plwidth(2.d0)                          ! Thick lines
-  call pllsty(1)                              ! Full lines
+  call plwidth(2.d0)                              ! Thick lines
+  call pllsty(1)                                  ! Full lines
   
   do it=1,time
      
