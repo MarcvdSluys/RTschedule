@@ -89,18 +89,18 @@ subroutine schedule_LLF(np,time, name, ti,ci,di,pi)
   
   implicit none
   integer, intent(in) :: np,time, ti(np),ci(np),di(np),pi(np)
-  integer :: it,pr, ri,ro, li(np),cc(np),tte(np), Nopts
+  integer :: it,pr, ri,ro, li(np),cc(np),tte(np), Nopts, nSwitch
   integer, allocatable :: run(:), ccs(:,:)
   character :: name(np), ccpr*(9),lipr*(9),ttepr*(9)
   
-  ! Initial computation times and laxities:
   ro = 1
-  cc = 0
-  li = 0
   tte = 0
   allocate(ccs(np,time), run(time))
   ccs = 0
+  nSwitch = 0
   
+  ! Initial computation times and laxities:
+  cc=0; li=0
   do pr=1,np
      if(ti(pr).eq.0) then
         cc(pr) = ci(pr)
@@ -162,17 +162,22 @@ subroutine schedule_LLF(np,time, name, ti,ci,di,pi)
      end if
      if(it.gt.1 .and. ri.ne.ro) then
         write(*,'(2x,A)', advance='no') 'switch'
+        nSwitch = nSwitch + 1
         if(ro.ne.0) then
-           if(cc(ro).gt.0) write(*,'(A,I0,A)', advance='no') ' ('//trim(name(ro))//':',cc(ro), '>)'
+           if(cc(ro).gt.0) then
+              write(*,'(A,I0,A)', advance='no') ' (task '//trim(name(ro))//': ',cc(ro), '>)'
+           else
+              write(*,'(A)', advance='no') ' (task '//trim(name(ro))//' done)'
+           end if
         end if
      end if
      
      Nopts = count(li(1:np).eq.minval(li(1:np), cc(1:np).gt.0) .and. cc(1:np).gt.0)  ! Number of tasks with Ci>0 and lowest laxity
      if(Nopts.gt.1) then   ! Have a choice
         if(ri.eq.ro) then  ! No choice - keep current task running
-           write(*,'(2x,A)', advance='no') 'keep same task'
+           write(*,'(2x,A)', advance='no') 'Choice: keep same task'
         else               ! True choice
-           write(*,'(2x,A)', advance='no') 'Choice!'
+           write(*,'(2x,A)', advance='no') 'Choice: pick first task'
         end if
      end if
      
@@ -222,6 +227,7 @@ subroutine schedule_LLF(np,time, name, ti,ci,di,pi)
   
   
   write(*,'(/,A,I0,A)') '  The system can be scheduled for ', time, ' time units.'
+  write(*,'(2x,I0,A)') nSwitch, ' task switches ('//d2s(dble(time)/dble(nSwitch+1),2)//' time units per run).'
   
 end subroutine schedule_LLF
 !***********************************************************************************************************************************
@@ -283,7 +289,7 @@ end subroutine plot_ascii_scheduler
 subroutine plot_scheduler(np,time, name,ti,pi,di, ccs,run)
   use SUFR_kinds, only: double
   use SUFR_numerics, only: plot_ranges
-  use plplot, only: plsdev, plsfnam, plbox, plmtex,plfill,plptex
+  use plplot, only: plsdev, plsfnam, plbox, plmtex,plfill,plptex, plpoin
   
   implicit none
   integer, intent(in) :: np,time, ti(np),pi(np),di(np), ccs(np,time),run(time)
@@ -318,9 +324,9 @@ subroutine plot_scheduler(np,time, name,ti,pi,di, ccs,run)
      end if
      
      ! Print remaining cpu time:
-     if(it.gt.1) then
-        if(run(it).ne.run(it-1) .and. run(it-1).ne.0) then
-           if(ccs(run(it-1),it).gt.0) then
+     if(it.gt.1) then  ! Can't have a task switch in timeslise 0-1
+        if(run(it).ne.run(it-1) .and. run(it-1).ne.0) then  ! There must be a task switch
+           if(ccs(run(it-1),it).gt.0) then  ! CPU time left for the old task
               
               call plcol0(1)                              ! Black text
               write(tmpStr,'(I0,A)') ccs(run(it-1),it), '>'
@@ -343,13 +349,23 @@ subroutine plot_scheduler(np,time, name,ti,pi,di, ccs,run)
      
      do pr=1,np
         
-        ! Mark event/deadline:
+        ! Mark event/deadline (up arrow, as in SimSo):
         if( mod( ti(pr)-it + pi(pr)*1000, pi(pr)).eq.0 )  call plarrow(2,  dble([it,it]), dble([pr,pr-1]), 0.2d0, 15.d0)  ! len = 0.2, flare 15d
         
-        ! Mark deadline:
+        ! Mark deadline (down arrow, as in SimSo):
         if( mod( ti(pr)+di(pr)-it + pi(pr)*1000, pi(pr)).eq.0 )  call plarrow( 2, dble([it,it]), dble([pr-1,pr]), 0.2d0, 15.d0)  ! len = 0.2, flare 15d
         
      end do  ! pr
+     
+     ! Mark a completed task:
+     if(it.gt.1) then  ! Can't have a task switch in timeslise 0-1
+        if(run(it).ne.run(it-1) .and. run(it-1).ne.0) then  ! There must be a task switch
+           if(ccs(run(it-1),it).le.0) then  ! No CPU time left for the old task
+              call plpoin([dble(it-1)], [dble(run(it-1))], 17)
+           end if
+        end if
+     end if
+     
   end do  ! it
   
   call plwidth(2.d0)                          ! Thick lines
