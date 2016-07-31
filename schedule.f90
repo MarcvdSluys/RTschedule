@@ -260,6 +260,8 @@ subroutine plot_scheduler(sched, np,time, name,ti,pi,di, ccs,run)
         ! Mark deadline (down arrow, as in SimSo):
         if( mod( ti(pr)+di(pr)-it + pi(pr)*1000, pi(pr)).eq.0 )  then
            call plarrow( 2, dble([it,it]), dble([pr-1,pr]), 0.25d0, 25.d0)  ! len = 0.25, angle 25d
+           
+           ! Mark missed deadlines:
            if(it.gt.0) then
               if(ccs(pr,it).gt.1) then  ! Process pr misses a deadline at t=it
                  call plssym(10.d0, 1.d0)  ! Huge symbols
@@ -267,6 +269,7 @@ subroutine plot_scheduler(sched, np,time, name,ti,pi,di, ccs,run)
                  call plssym(5.d0, 1.d0)  ! Default symbol size
               end if
            end if
+           
         end if
         
      end do  ! pr

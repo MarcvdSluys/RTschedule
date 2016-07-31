@@ -73,11 +73,11 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load)
      run(it) = ri  ! Save for later use
      
      
-     ! Deadline missed:
-     if(minval(prio(1:np)).lt.0) then
+     ! Report missed deadlines:
+     if( maxval(ccs(:, it), mod( ti+di-it + pi*1000, pi).eq.0).gt.1 ) then  ! The maximum Ci of tasks with Di=0 is >= 2
         write(*,'(//,A,I0,A)', advance='no') '   ***   At t=',it,', a deadline is missed for process'
         do pr=1,np
-           if(prio(pr).lt.0) then
+           if( mod( ti(pr)+di(pr)-it + pi(pr)*1000, pi(pr)).eq.0 .and. ccs(pr,it).gt.1 ) then
               write(*,'(A)', advance='no') ' '//trim(name(pr))
               nMiss = nMiss + 1
            end if
@@ -218,12 +218,17 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load)
   
   
   ! Report on missed deadlines:
-  if(nMiss.eq.0) then
+  select case(nMiss)
+  case(0)
      write(*,'(/,A,I0,A)') '  No deadlines were missed: the system can be scheduled for ', time, ' time units.'
-  else
+  case(1)
+     write(*,'(/,2x,I0,A,I0,A)') nMiss, ' ONE DEADLINE HAS BEEN MISSED in ', time, ' time units.'
+  case default
      write(*,'(/,2x,I0,A,I0,A)') nMiss, ' DEADLINES HAVE BEEN MISSED in ', time, ' time units.'
-  end if
+  end select
   write(*,'(2x,I0,A)') nSwitch, ' task switches ('//d2s(dble(time)/dble(nSwitch+1),2)//' time units per run).'
+  
+  write(*,*)
   
 end subroutine make_schedule
 !***********************************************************************************************************************************
