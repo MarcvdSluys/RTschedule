@@ -12,7 +12,7 @@ program schedule
   integer :: status,ip,ln, np,pr, time, ti(nLines),ci(nLines),di(nLines),pi(nLines)
   integer :: optts,majFr
   real(double) :: frac,load
-  character :: inFile*(99), name(nLines)
+  character :: inFile*(99), name(nLines)*(9)
   
   call set_SUFR_constants()
   
@@ -37,7 +37,7 @@ program schedule
      read(ip,*,iostat=status) name(ln), ti(ln),ci(ln),di(ln),pi(ln)
      if(status.lt.0) exit
      if(status.gt.0) call file_read_error_quit(trim(inFile), ln, 0)
-     write(*,'(A5, 9I5)') name(ln), ti(ln),ci(ln),di(ln),pi(ln)
+     write(*,'(A5, 9I5)') trim(name(ln)), ti(ln),ci(ln),di(ln),pi(ln)
   end do  ! ln
   close(ip)
   np = ln - 1
@@ -91,7 +91,7 @@ subroutine schedule_LLF(np,time, name, ti,ci,di,pi)
   integer, intent(in) :: np,time, ti(np),ci(np),di(np),pi(np)
   integer :: it,pr, ri,ro, li(np),cc(np),tte(np), Nopts, nSwitch,nMiss
   integer, allocatable :: run(:), ccs(:,:)
-  character :: name(np), ccpr*(9),lipr*(9),ttepr*(9)
+  character :: name(np)*(9), ccpr*(9),lipr*(9),ttepr*(9)
   
   ro=1; tte=0
   allocate(ccs(np,time), run(time));  ccs = 0
@@ -125,12 +125,11 @@ subroutine schedule_LLF(np,time, name, ti,ci,di,pi)
         write(*,'(//,A,I0,A)', advance='no') '   ***   At t=',it,', a deadline is missed for process'
         do pr=1,np
            if(li(pr).lt.0) then
-              write(*,'(A)', advance='no') ' '//name(pr)
+              write(*,'(A)', advance='no') ' '//trim(name(pr))
               nMiss = nMiss + 1
            end if
         end do
-        write(*,'(A,//)') ', while process '//name(ri)//' is running.   ***'
-        !stop
+        write(*,'(A,//)') ', while process '//trim(name(ri))//' is running.   ***'
      end if
      
      
@@ -247,11 +246,11 @@ subroutine plot_ascii_scheduler(np,time, name,ti,pi,di, run, detail)
   integer, intent(in) :: np,time, ti(np),pi(np),di(np), run(time)
   logical, intent(in) :: detail
   integer :: it, pr
-  character :: name(np)
+  character :: name(np)*(9)
   
   write(*,*)
   do pr=1,np
-     write(*,'(A4,3x)', advance='no') name(pr)
+     write(*,'(A4,3x)', advance='no') trim(name(pr))
      do it=1,time
         
         ! Mark runtime:
@@ -301,7 +300,7 @@ subroutine plot_scheduler(np,time, name,ti,pi,di, ccs,run)
   integer, intent(in) :: np,time, ti(np),pi(np),di(np), ccs(np,time),run(time)
   integer :: it, pr, xsize,ysize
   real(double) :: rat
-  character :: name(np), tmpStr*(9)
+  character :: name(np)*(9), tmpStr*(9)
   
   
   call plsfnam('schedule_LLF.png')            ! Set file name
@@ -315,7 +314,7 @@ subroutine plot_scheduler(np,time, name,ti,pi,di, ccs,run)
   
   call plinit()                               ! Initialise environment; Call after plsdev(), plssub(), plspage()
   call plbop()                                ! Begin a new page
-  call plvpor(0.07d0,0.96d0, 1.d0/dble(np-1),0.96d0)    ! Set view port in plot window
+  call plvpor(0.07d0,0.96d0, 1.d0/dble(np),0.96d0)    ! Set view port in plot window
   call plwind(0,dble(time), dble(np),0)       ! Set view port in world coordinates
   
   call plwidth(2.d0)                          ! Thick lines
@@ -376,7 +375,9 @@ subroutine plot_scheduler(np,time, name,ti,pi,di, ccs,run)
      if(it.gt.1) then  ! Can't have a task switch in timeslise 0-1
         if(run(it).ne.run(it-1) .and. run(it-1).ne.0) then  ! There must be a task switch
            if(ccs(run(it-1),it).le.0) then  ! No CPU time left for the old task
+              call plssym(7.d0, 1.d0)  ! Larger symbols
               call plpoin([dble(it-1)], [dble(run(it-1))], 17)
+              call plssym(5.d0, 1.d0)  ! Default symbol size
            end if
         end if
      end if
@@ -388,13 +389,15 @@ subroutine plot_scheduler(np,time, name,ti,pi,di, ccs,run)
   
   
   
-  
+  ! Print axis labels:
   call plcol0(1)                                   ! Black text
   call plmtex('B', 3.5d0, 0.5d0,0.5d0, 'Time')     ! Plot label for horizontal axis
   call plmtex('L', 3.5d0, 0.5d0,0.5d0, 'Process')  ! Plot label for vertical axis
   
+  
+  ! Print the task names:
   do pr=1,np
-     call plptex(0.d0, dble(pr)-0.5d0, 1.d0,0.d0, 1.d0, trim(name(pr)))
+     call plmtex('LV', 1.5d0, (dble(np-pr)+0.5d0)/dble(np), 0.5d0, trim(name(pr)))  ! Plot label for vertical axis
   end do
   
   call plend()                                ! Finish plot
