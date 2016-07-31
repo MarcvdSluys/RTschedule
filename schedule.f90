@@ -24,6 +24,11 @@ program schedule
   call make_schedule(sched, np,time, name, ti,ci,di,pi, load)
   
   
+  ! Create an EDF schedule:
+  sched = 'EDF'  ! EDF algorithm
+  call make_schedule(sched, np,time, name, ti,ci,di,pi, load)
+  
+  
   ! Create a LLF schedule:
   sched = 'LLF'  ! LLF algorithm
   call make_schedule(sched, np,time, name, ti,ci,di,pi, load)
@@ -207,10 +212,11 @@ subroutine plot_scheduler(sched, np,time, name,ti,pi,di, ccs,run)
   character, intent(in) :: sched*(9), name(np)*(9)
   integer :: it, pr, xsize,ysize
   real(double) :: rat
-  character :: tmpStr*(9)
+  character :: tmpStr*(9), plFileName*(99)
   
   
-  call plsfnam('schedule_'//trim(sched)//'.png')  ! Set file name
+  plFileName = 'schedule_'//trim(sched)//'.png'
+  call plsfnam(trim(plFileName))                  ! Set file name
   call plsdev('pngcairo')                         ! Set plotting device: png
   
   xsize = 1400  ! pixels
@@ -311,6 +317,8 @@ subroutine plot_scheduler(sched, np,time, name,ti,pi,di, ccs,run)
   end do
   
   call plend()                                ! Finish plot
+  
+  write(*,'(/,A)') '  Graphical schedule saved as '//trim(plFileName)
   
 end subroutine plot_scheduler
 !***********************************************************************************************************************************

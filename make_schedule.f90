@@ -59,10 +59,13 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load)
   
   ! Start scheduling:
   
-  ! Initial computation times and laxities:
+  ! Initial computation times and laxities/priorities:
   do pr=1,np
      if(ti(pr).eq.0) then
         cc(pr) = ci(pr)
+        ! The priority is given by the time to the next deadline in EDF:
+        it = 1
+        if(trim(sched).eq.'EDF') prio(pr) = mod( ti(pr)+di(pr)-it + pi(pr)*1000000, pi(pr))  ! Time till deadline
         if(trim(sched).eq.'LLF') prio(pr) = di(pr) - ci(pr)  ! The priority is given by the laxity in LLF
      end if
   end do
@@ -113,7 +116,15 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load)
            end if
            
            write(*,'(5x,A4)', advance='no') ccpr
-           !write(*,'(2x,I4)', advance='no') tte(pr)
+        case('EDF')
+           if(pr.eq.ri) then
+              ccpr = '_'//trim(ccpr)//'_'
+           else
+              ccpr = ' '//trim(ccpr)
+           end if
+           
+           write(*,'(5x,A4)', advance='no') ccpr
+           write(*,'(A3)', advance='no') trim(priopr)
         case('LLF')
            if(cc(pr).eq.0) then
               priopr = '-'
@@ -143,9 +154,9 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load)
      
      
      select case(trim(sched))
-     case('RM')
+     case('RM','EDF')
         ! Print currently running task:
-        write(*,'(5x,2I4)', advance='no') ri,ro
+        write(*,'(5x,A,I0)', advance='no') 'run: ',ri
      case('LLF')
         ! Print which task is running + its laxity:
         if(ri.eq.0) then  ! No task is running
@@ -184,19 +195,24 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load)
      end if
      
      
+     ! Run the current task:
      select case(trim(sched))
      case('RM')
-        ! Run the task; decrease its cc:
-        if(ri.gt.0) cc(ri) = cc(ri) - 1
+        if(ri.gt.0) cc(ri) = cc(ri) - 1         ! The running task's cc decreases
+        
+     case('EDF')
+        if(ri.gt.0) cc(ri) = cc(ri) - 1         ! The running task's cc decreases
+        prio = mod( ti+di-it + pi*1000000, pi)  ! Update all priorities
+        
      case('LLF')
-        ! Run job: current job is ri, so its cc decreases; all other laxities decrease:
         do pr=1,np
            if(pr.eq.ri) then
-              cc(pr) = cc(pr) - 1
+              cc(pr) = cc(pr) - 1                       ! The running task's cc decreases
            else
-              if(it.ge.ti(pr)) prio(pr) = prio(pr) - 1
+              if(it.ge.ti(pr)) prio(pr) = prio(pr) - 1  ! All other tasks: laxity decreases
            end if
         end do
+        
      case default
         call quit_program_error('make_schedule():  unknown scheduler: '//trim(sched), 1)
      end select
@@ -204,7 +220,7 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load)
      
      ! New event:
      do pr=1,np
-        tte(pr) = mod( ti(pr)+di(pr)-it + pi(pr)*1000, pi(pr))  ! Time to next deadline
+        tte(pr) = mod( ti(pr)+di(pr)-it + pi(pr)*1000000, pi(pr))  ! Time to next deadline
         if(tte(pr).eq.0) then        ! New event occurs
            cc(pr) = ci(pr)           ! Reset the computation time 
            if(trim(sched).eq.'LLF') prio(pr) = di(pr) - ci(pr)  ! Reset the laxity for LLF

@@ -1,0 +1,9 @@
+#task  t      c      d      p
+
+time: 60                           # 0: use major frame/hyperperiod
+T1    0      2     12     12
+T2    0      8     24     24
+T3    0      6     30     30
+T4    0      4     16     16
+
+
