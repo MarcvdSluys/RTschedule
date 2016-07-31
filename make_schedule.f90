@@ -64,8 +64,8 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load)
      if(ti(pr).eq.0) then
         cc(pr) = ci(pr)
         ! The priority is given by the time to the next deadline in EDF:
-        it = 1
-        if(trim(sched).eq.'EDF') prio(pr) = mod( ti(pr)+di(pr)-it + pi(pr)*1000000, pi(pr))  ! Time till deadline
+        it = 0
+        if(trim(sched).eq.'EDF') prio(pr) = mod( ti(pr)+di(pr)-it-1 + pi(pr)*1000000, pi(pr)) + 1  ! Time till deadline
         if(trim(sched).eq.'LLF') prio(pr) = di(pr) - ci(pr)  ! The priority is given by the laxity in LLF
      end if
   end do
@@ -198,11 +198,11 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load)
      ! Run the current task:
      select case(trim(sched))
      case('RM')
-        if(ri.gt.0) cc(ri) = cc(ri) - 1         ! The running task's cc decreases
+        if(ri.gt.0) cc(ri) = cc(ri) - 1                 ! The running task's cc decreases
         
      case('EDF')
-        if(ri.gt.0) cc(ri) = cc(ri) - 1         ! The running task's cc decreases
-        prio = mod( ti+di-it + pi*1000000, pi)  ! Update all priorities
+        if(ri.gt.0) cc(ri) = cc(ri) - 1                 ! The running task's cc decreases
+        prio = mod( ti+di-it-1 + pi*1000000, pi) + 1    ! Update all priorities
         
      case('LLF')
         do pr=1,np
