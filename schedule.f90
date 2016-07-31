@@ -1,17 +1,13 @@
 !***********************************************************************************************************************************
 program schedule
-  use SUFR_kinds, only: double
   use SUFR_constants, only: set_SUFR_constants
   use SUFR_system, only: find_free_io_unit, file_open_error_quit, file_read_error_quit, syntax_quit
   use SUFR_dummy, only: dumStr
-  use SUFR_text, only: d2s
-  use SUFR_numerics, only: gcd,lcm
+  use SUFR_numerics, only: lcm
   
   implicit none
   integer, parameter :: nLines=99
-  integer :: status,ip,ln, np,pr, time, ti(nLines),ci(nLines),di(nLines),pi(nLines)
-  integer :: optts,majFr
-  real(double) :: frac,load
+  integer :: status,ip,ln, np, time, ti(nLines),ci(nLines),di(nLines),pi(nLines)
   character :: inFile*(99), name(nLines)*(9)
   
   call set_SUFR_constants()
@@ -42,14 +38,36 @@ program schedule
   close(ip)
   np = ln - 1
   
-  majFr = lcm(pi(1:np))
   if(time.le.0) then  ! Use major frame
-     time = majFr
+     time = lcm(pi(1:np))
      write(*,'(A)') '  Using a major frame (hyperperiod) as the scheduling time.'
   end if
   write(*,'(2x,2(I0,A))') np, ' lines (processes) read; scheduling for ', time,' time units.'
   write(*,*)
   
+  
+  call print_system_data(np, ci,pi)
+  
+  
+  ! Create a LLF schedule:
+  call schedule_LLF(np,time, name, ti,ci,di,pi)
+  
+  write(*,*)
+end program schedule
+!***********************************************************************************************************************************
+
+
+
+!***********************************************************************************************************************************
+subroutine print_system_data(np, ci,pi)
+  use SUFR_kinds, only: double
+  use SUFR_text, only: d2s
+  use SUFR_numerics, only: gcd,lcm
+  
+  implicit none
+  integer, intent(in) :: np, ci(np),pi(np)
+  integer :: pr, optts,majFr
+  real(double) :: frac,load
   
   ! Print system load:
   write(*,'(A)', advance='no') '  System load: '
@@ -73,16 +91,9 @@ program schedule
   write(*,'(A,I0,A)') '  Major frame: ', majFr, ' time units'
   write(*,'(A,I0,A)') '  Minor frame: ', gcd(pi(1:np)), ' time units'
   write(*,*)
-  
-  
-  ! Create a LLF schedule:
-  call schedule_LLF(np,time, name, ti,ci,di,pi)
-  
-  write(*,*)
-end program schedule
+
+end subroutine print_system_data
 !***********************************************************************************************************************************
-
-
 
 
 !***********************************************************************************************************************************
@@ -139,7 +150,7 @@ subroutine schedule_LLF(np,time, name, ti,ci,di,pi)
      
      
      ! Print timestamp:
-     write(*,'(2x,I0,A,I0,T9,A)', advance='no') it-1,'-',it, ''
+     write(*,'(2x,I0,A,I0,T11,A)', advance='no') it-1,'-',it, ''
      
      ! Print detailed data:
      do pr=1,np
