@@ -1,52 +1,20 @@
 !***********************************************************************************************************************************
 program schedule
   use SUFR_constants, only: set_SUFR_constants
-  use SUFR_system, only: find_free_io_unit, file_open_error_quit, file_read_error_quit, syntax_quit
-  use SUFR_dummy, only: dumStr
-  use SUFR_numerics, only: lcm
   
   implicit none
-  integer, parameter :: nLines=99
-  integer :: status,ip,ln, np, time, ti(nLines),ci(nLines),di(nLines),pi(nLines)
-  character :: inFile*(99), name(nLines)*(9)
+  integer, parameter :: nProcMax=19  ! Maximum number of processes to expect
+  integer :: np, time, ti(nProcMax),ci(nProcMax),di(nProcMax),pi(nProcMax)
+  character :: name(nProcMax)*(9)
   
+  ! Initialise libSUFR:
   call set_SUFR_constants()
   
-  if(command_argument_count().ne.1) call syntax_quit('<input file name>', 0, 'Simple scheduling tool for LLF')
-  call get_command_argument(1, inFile)
+  ! Read the input file:
+  call read_input_file(nProcMax, name, ti,ci,di,pi, np,time)
   
-  call find_free_io_unit(ip)
-  open(unit=ip,form='formatted',status='old',action='read',position='rewind',file=trim(inFile),iostat=status)
-  if(status.ne.0) call file_open_error_quit(trim(inFile), 1, 1)  ! 1: input file, 1: status: not ok
-  
-  
-  ! Read file header:
-  do ln=1,1
-     read(ip,'(A)') dumStr
-  end do
-  
-  ! Read file body:
-  write(*,*)
-  read(ip,*) dumStr, time
-  write(*,'(9A5)') 'Name', 'ti','ci','di','pi'
-  do ln=1,nLines
-     read(ip,*,iostat=status) name(ln), ti(ln),ci(ln),di(ln),pi(ln)
-     if(status.lt.0) exit
-     if(status.gt.0) call file_read_error_quit(trim(inFile), ln, 0)
-     write(*,'(A5, 9I5)') trim(name(ln)), ti(ln),ci(ln),di(ln),pi(ln)
-  end do  ! ln
-  close(ip)
-  np = ln - 1
-  
-  if(time.le.0) then  ! Use major frame
-     time = lcm(pi(1:np))
-     write(*,'(A)') '  Using a major frame (hyperperiod) as the scheduling time.'
-  end if
-  write(*,'(2x,2(I0,A))') np, ' lines (processes) read; scheduling for ', time,' time units.'
-  write(*,*)
-  
-  
-  call print_system_data(np, ci,pi)
+  ! Print some basic data about the system:
+  call print_system_data(np,time, name,ti,ci,di,pi)
   
   
   ! Create a LLF schedule:
@@ -57,17 +25,81 @@ end program schedule
 !***********************************************************************************************************************************
 
 
+!***********************************************************************************************************************************
+subroutine read_input_file(nProcMax, name, ti,ci,di,pi, np,time)
+  use SUFR_system, only: find_free_io_unit, file_open_error_quit, file_read_error_quit, syntax_quit
+  use SUFR_dummy, only: dumStr
+  
+  implicit none
+  integer, intent(in) :: nProcMax
+  integer, intent(out) :: ti(nProcMax),ci(nProcMax),di(nProcMax),pi(nProcMax), np,time
+  character, intent(out) :: name(nProcMax)*(9)
+  integer :: ip,ln, status
+  character :: inFile*(99)
+  
+  ! See whether a file name was passed on the command line:
+  if(command_argument_count().ne.1) call syntax_quit('<input file name>', 0, 'Simple scheduling tool for LLF')
+  call get_command_argument(1, inFile)
+  
+  ! Open the input file:
+  call find_free_io_unit(ip)
+  open(unit=ip,form='formatted',status='old',action='read',position='rewind',file=trim(inFile),iostat=status)
+  if(status.ne.0) call file_open_error_quit(trim(inFile), 1, 1)  ! 1: input file, 1: status: not ok
+  
+  ! Read file header:
+  do ln=1,1
+     read(ip,'(A)') dumStr
+  end do
+  
+  ! Read file body:
+  write(*,*)
+  read(ip,*) dumStr, time
+  do ln=1,nProcMax
+     read(ip,*,iostat=status) name(ln), ti(ln),ci(ln),di(ln),pi(ln)
+     if(status.lt.0) exit
+     if(status.gt.0) call file_read_error_quit(trim(inFile), ln, 0)
+  end do  ! ln
+
+  ! Close the file:
+  close(ip)
+  np = ln - 1  ! Number of processes/tasks found
+  
+end subroutine read_input_file
+!***********************************************************************************************************************************
+  
+
+
 
 !***********************************************************************************************************************************
-subroutine print_system_data(np, ci,pi)
+subroutine print_system_data(np,time, name,ti,ci,di,pi)
   use SUFR_kinds, only: double
   use SUFR_text, only: d2s
   use SUFR_numerics, only: gcd,lcm
   
   implicit none
-  integer, intent(in) :: np, ci(np),pi(np)
+  integer, intent(in) :: np, ti(np),ci(np),di(np),pi(np)
+  integer, intent(inout) :: time
+  character, intent(in) :: name(np)*(9)
   integer :: pr, optts,majFr
   real(double) :: frac,load
+  
+  ! Print task list:
+  write(*,'(2x,A)') 'Task list:'
+  write(*,'(2x,9A5)') 'Name', 'ti','ci','di','pi'
+  do pr=1,np
+     write(*,'(2x,A5, 9I5)') trim(name(pr)), ti(pr),ci(pr),di(pr),pi(pr)
+  end do
+  write(*,*)
+  
+  ! Print scheduling time:
+  majFr = lcm(pi(1:np))
+  if(time.le.0) then  ! Use major frame
+     time = majFr
+     write(*,'(A)') '  Using a major frame (hyperperiod) as the scheduling time.'
+  end if
+  write(*,'(2x,2(I0,A))') np, ' lines (processes) read; scheduling for ', time,' time units.'
+  write(*,*)
+  
   
   ! Print system load:
   write(*,'(A)', advance='no') '  System load: '
@@ -101,7 +133,6 @@ subroutine schedule_LLF(np,time, name, ti,ci,di,pi)
   use SUFR_constants, only: set_SUFR_constants
   use SUFR_system, only: find_free_io_unit, file_open_error_quit, file_read_error_quit, syntax_quit
   use SUFR_text, only: d2s
-  use SUFR_numerics, only: gcd,lcm
   
   implicit none
   integer, intent(in) :: np,time, ti(np),ci(np),di(np),pi(np)
