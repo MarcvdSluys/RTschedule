@@ -41,6 +41,12 @@ program schedule
   end do  ! ln
   close(ip)
   np = ln - 1
+  
+  majFr = lcm(pi(1:np))
+  if(time.le.0) then  ! Use major frame
+     time = majFr
+     write(*,'(A)') '  Using a major frame (hyperperiod) as the scheduling time.'
+  end if
   write(*,'(2x,2(I0,A))') np, ' lines (processes) read; scheduling for ', time,' time units.'
   write(*,*)
   
@@ -63,7 +69,6 @@ program schedule
   write(*,*)
   
   optts = gcd(ci(1:np))
-  majFr = lcm(pi(1:np))
   write(*,'(A,I0,A)') '  Optimal timeslice: ', optts, ' time units'
   write(*,'(A,I0,A)') '  Major frame: ', majFr, ' time units'
   write(*,'(A,I0,A)') '  Minor frame: ', gcd(pi(1:np)), ' time units'
