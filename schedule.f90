@@ -130,15 +130,14 @@ end subroutine print_system_data
 
 !***********************************************************************************************************************************
 subroutine schedule_LLF(np,time, name, ti,ci,di,pi)
-  use SUFR_constants, only: set_SUFR_constants
-  use SUFR_system, only: find_free_io_unit, file_open_error_quit, file_read_error_quit, syntax_quit
   use SUFR_text, only: d2s
   
   implicit none
   integer, intent(in) :: np,time, ti(np),ci(np),di(np),pi(np)
+  character, intent(in) :: name(np)*(9)
   integer :: it,pr, ri,ro, li(np),cc(np),tte(np), Nopts, nSwitch,nMiss
   integer, allocatable :: run(:), ccs(:,:)
-  character :: name(np)*(9), ccpr*(9),lipr*(9),ttepr*(9)
+  character :: ccpr*(9),lipr*(9),ttepr*(9)
   
   ro=1; tte=0
   allocate(ccs(np,time), run(time));  ccs = 0
@@ -162,7 +161,7 @@ subroutine schedule_LLF(np,time, name, ti,ci,di,pi)
      ! Determine running task:
      ri = minloc(li(1:np), 1, cc(1:np).gt.0)  ! Running task: minimum li and cc>0
      if(ri*ro.ne.0) then
-        if(it.ne.1 .and. ri.ne.ro .and. cc(ro).gt.0 .and. li(ro).le.li(ri)) ri = ro  ! Keep the old task running if laxities are equal
+        if(it.ne.1 .and. ri.ne.ro .and. cc(ro).gt.0 .and. li(ro).le.li(ri)) ri = ro  ! Keep old task running if laxities are equal
      end if
      run(it) = ri  ! Save for later use
      
@@ -291,9 +290,9 @@ end subroutine schedule_LLF
 subroutine plot_ascii_scheduler(np,time, name,ti,pi,di, run, detail)
   implicit none
   integer, intent(in) :: np,time, ti(np),pi(np),di(np), run(time)
+  character, intent(in) :: name(np)*(9)
   logical, intent(in) :: detail
   integer :: it, pr
-  character :: name(np)*(9)
   
   write(*,*)
   do pr=1,np
@@ -340,14 +339,14 @@ end subroutine plot_ascii_scheduler
 
 subroutine plot_scheduler(np,time, name,ti,pi,di, ccs,run)
   use SUFR_kinds, only: double
-  use SUFR_numerics, only: plot_ranges
   use plplot, only: plsdev, plsfnam, plbox, plmtex,plfill,plptex, plpoin
   
   implicit none
   integer, intent(in) :: np,time, ti(np),pi(np),di(np), ccs(np,time),run(time)
+  character, intent(in) :: name(np)*(9)
   integer :: it, pr, xsize,ysize
   real(double) :: rat
-  character :: name(np)*(9), tmpStr*(9)
+  character :: tmpStr*(9)
   
   
   call plsfnam('schedule_LLF.png')            ! Set file name
@@ -401,12 +400,12 @@ subroutine plot_scheduler(np,time, name,ti,pi,di, ccs,run)
      
      do pr=1,np
         
-        ! Mark event (up arrow, as in SimSo):
-        if( mod( ti(pr)-it + pi(pr)*1000, pi(pr)).eq.0 )  call plarrow(2,  dble([it,it]), dble([pr,pr-1]), 0.25d0, 25.d0)  ! len = 0.2, angle 15d
+        ! Mark event (up arrow, as in SimSo - len 0.25, angle 25d):
+        if( mod( ti(pr)-it + pi(pr)*1000, pi(pr)).eq.0 )  call plarrow(2,  dble([it,it]), dble([pr,pr-1]), 0.25d0, 25.d0)
         
         ! Mark deadline (down arrow, as in SimSo):
         if( mod( ti(pr)+di(pr)-it + pi(pr)*1000, pi(pr)).eq.0 )  then
-           call plarrow( 2, dble([it,it]), dble([pr-1,pr]), 0.25d0, 25.d0)  ! len = 0.2, angle 15d
+           call plarrow( 2, dble([it,it]), dble([pr-1,pr]), 0.25d0, 25.d0)  ! len = 0.25, angle 25d
            if(it.gt.0) then
               if(ccs(pr,it).gt.1) then  ! Process pr misses a deadline at t=it
                  call plssym(10.d0, 1.d0)  ! Huge symbols
@@ -486,7 +485,7 @@ subroutine plarrow(Narr, Xarr,Yarr, arrowLen, angle)
   use plplot, only: plflt, plline, plfill
   
   implicit none
-  integer :: Narr
+  integer, intent(in) :: Narr
   real(kind=plflt), intent(in) :: Xarr(Narr),Yarr(Narr), arrowLen,angle
   real(kind=plflt) :: dX,dY, dX1,dX2, dY1,dY2, alpha,alpha1,alpha2
   
