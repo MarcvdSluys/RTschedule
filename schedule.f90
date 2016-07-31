@@ -229,7 +229,7 @@ subroutine schedule_LLF(np,time, name, ti,ci,di,pi)
   call plot_scheduler(np,time, name,ti,pi,di, ccs,run)
   
   if(nMiss.eq.0) then
-     write(*,'(/,A,I0,A)') '  The system can be scheduled for ', time, ' time units.'
+     write(*,'(/,A,I0,A)') '  No deadlines were missed: the system can be scheduled for ', time, ' time units.'
   else
      write(*,'(/,2x,I0,A,I0,A)') nMiss, ' DEADLINES HAVE BEEN MISSED in ', time, ' time units.'
   end if
@@ -349,17 +349,26 @@ subroutine plot_scheduler(np,time, name,ti,pi,di, ccs,run)
   call plbox('BCGHNT',5.d0,5, 'BCGT',1.d0,0)  ! Plot box
   
   
-  call plcol0(2)                              ! Blue lines
-  call plwidth(3.d0)                          ! Very thick lines
+  call plcol0(2)                              ! Red lines
+  call plwidth(2.5d0)                          ! Thicker lines
   do it=0,time
      
      do pr=1,np
         
-        ! Mark event/deadline (up arrow, as in SimSo):
-        if( mod( ti(pr)-it + pi(pr)*1000, pi(pr)).eq.0 )  call plarrow(2,  dble([it,it]), dble([pr,pr-1]), 0.2d0, 15.d0)  ! len = 0.2, flare 15d
+        ! Mark event (up arrow, as in SimSo):
+        if( mod( ti(pr)-it + pi(pr)*1000, pi(pr)).eq.0 )  call plarrow(2,  dble([it,it]), dble([pr,pr-1]), 0.25d0, 25.d0)  ! len = 0.2, angle 15d
         
         ! Mark deadline (down arrow, as in SimSo):
-        if( mod( ti(pr)+di(pr)-it + pi(pr)*1000, pi(pr)).eq.0 )  call plarrow( 2, dble([it,it]), dble([pr-1,pr]), 0.2d0, 15.d0)  ! len = 0.2, flare 15d
+        if( mod( ti(pr)+di(pr)-it + pi(pr)*1000, pi(pr)).eq.0 )  then
+           call plarrow( 2, dble([it,it]), dble([pr-1,pr]), 0.25d0, 25.d0)  ! len = 0.2, angle 15d
+           if(it.gt.0) then
+              if(ccs(pr,it).gt.1) then  ! Process pr misses a deadline at t=it
+                 call plssym(10.d0, 1.d0)  ! Huge symbols
+                 call plpoin(dble([it]), dble([pr])-0.5d0, 5)  ! Cross
+                 call plssym(5.d0, 1.d0)  ! Default symbol size
+              end if
+           end if
+        end if
         
      end do  ! pr
      
@@ -422,13 +431,13 @@ end subroutine plmycolours
 
 
 !***********************************************************************************************************************************
-subroutine plarrow(Narr, Xarr,Yarr, arrowLen, flare)
+subroutine plarrow(Narr, Xarr,Yarr, arrowLen, angle)
   use SUFR_constants, only: d2r !,r2d
   use plplot, only: plflt, plline, plfill
   
   implicit none
   integer :: Narr
-  real(kind=plflt), intent(in) :: Xarr(Narr),Yarr(Narr), arrowLen,flare
+  real(kind=plflt), intent(in) :: Xarr(Narr),Yarr(Narr), arrowLen,angle
   real(kind=plflt) :: dX,dY, dX1,dX2, dY1,dY2, alpha,alpha1,alpha2
   
   
@@ -438,8 +447,8 @@ subroutine plarrow(Narr, Xarr,Yarr, arrowLen, flare)
   dY = Yarr(Narr) - Yarr(Narr-1)
   
   alpha = atan2(dY,dX)
-  alpha1 = alpha - flare*d2r
-  alpha2 = alpha + flare*d2r
+  alpha1 = alpha - angle*d2r
+  alpha2 = alpha + angle*d2r
   
   dX1 = -arrowLen * cos(alpha1)
   dY1 = -arrowLen * sin(alpha1)
