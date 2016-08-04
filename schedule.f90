@@ -21,7 +21,7 @@ program schedule
   
   ! Create an RM schedule:
   sched = 'RM'  ! RM algorithm
-  call make_schedule(sched, np,time, name, ti,ci,di,pi, load)
+  !call make_schedule(sched, np,time, name, ti,ci,di,pi, load)
   
   
   ! Create an EDF schedule:
@@ -31,7 +31,7 @@ program schedule
   
   ! Create a LLF schedule:
   sched = 'LLF'  ! LLF algorithm
-  call make_schedule(sched, np,time, name, ti,ci,di,pi, load)
+  !call make_schedule(sched, np,time, name, ti,ci,di,pi, load)
   
   write(*,*)
 end program schedule
