@@ -256,3 +256,57 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
   
 end subroutine make_schedule
 !***********************************************************************************************************************************
+
+
+!***********************************************************************************************************************************
+!> \brief  'Plot' an ascii scheduler
+
+subroutine plot_ascii_scheduler(sched, np,time, name,ti,pi,di, run, detail)
+  implicit none
+  integer, intent(in) :: np,time, ti(np),pi(np),di(np), run(time)
+  character, intent(in) :: sched*(9), name(np)*(9)
+  logical, intent(in) :: detail
+  integer :: it, pr
+  
+  write(*,*)
+  write(*,'(A)') '  '//trim(sched)//' ASCII schedule:'
+  
+  do pr=1,np
+     write(*,'(A4,3x)', advance='no') trim(name(pr))
+     do it=1,time
+        
+        ! Mark runtime:
+        if(run(it).eq.pr) then
+           write(*,'(A)', advance='no') '#'
+        else
+           write(*,'(A)', advance='no') ' '
+        end if
+        
+        ! Mark event/deadline:
+        if(detail) then
+           if( mod( ti(pr)-it + pi(pr)*1000, pi(pr)).eq.0 ) then  ! Next event
+              write(*,'(A)', advance='no') 'e'
+           else if( mod( ti(pr)+di(pr)-it + pi(pr)*1000, pi(pr)).eq.0 )  then ! Next deadline != event
+              write(*,'(A)', advance='no') 'd'
+           else
+              write(*,'(A)', advance='no') ' '
+           end if
+        end if
+        
+     end do  ! it
+     write(*,*)
+  end do  ! pr
+  
+  write(*,'(A4,I3)', advance='no') 't',0
+  do it=1,time
+     if(mod(it,5).eq.0) then
+        if(detail) write(*,'(5x)', advance='no')
+        write(*,'(I5)', advance='no') it
+     end if
+  end do
+  write(*,*)
+  
+end subroutine plot_ascii_scheduler
+!***********************************************************************************************************************************
+  
+
