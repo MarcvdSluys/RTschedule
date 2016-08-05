@@ -7,7 +7,7 @@ module plotSettings
   save
   
   integer :: sclType, plSize
-  character :: plotType*(19)
+  character :: schedType*(19), plotType*(19)
   logical :: colour
   
 end module plotSettings
@@ -18,12 +18,13 @@ end module plotSettings
 program schedule
   use SUFR_kinds, only: double
   use SUFR_constants, only: set_SUFR_constants
+  use plotSettings, only: schedType
   
   implicit none
   integer, parameter :: nProcMax=19  ! Maximum number of processes to expect
-  integer :: np, time, ti(nProcMax),ci(nProcMax),di(nProcMax),pi(nProcMax)
+  integer :: np, time, ti(nProcMax),ci(nProcMax),di(nProcMax),pi(nProcMax), iSch
   real(double) :: load
-  character :: sched*(9), name(nProcMax)*(9), fileBaseName*(99)
+  character :: scheds(3)*(9), name(nProcMax)*(9), fileBaseName*(99)
   
   ! Initialise libSUFR:
   call set_SUFR_constants()
@@ -35,19 +36,15 @@ program schedule
   call print_system_data(np,time, name,ti,ci,di,pi, load)
   
   
-  ! Create an RM schedule:
-  sched = 'RM'  ! RM algorithm
-  !call make_schedule(sched, np,time, name, ti,ci,di,pi, load)
+  scheds = [character(len=9) :: 'RM', 'EDF', 'LLF']
   
-  
-  ! Create an EDF schedule:
-  sched = 'EDF'  ! EDF algorithm
-  call make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
-  
-  
-  ! Create a LLF schedule:
-  sched = 'LLF'  ! LLF algorithm
-  !call make_schedule(sched, np,time, name, ti,ci,di,pi, load)
+  if(trim(schedType).eq.'ALL') then  ! Create all schedules:
+     do iSch=1,3
+        call make_schedule(scheds(iSch), np,time, name, ti,ci,di,pi, load, fileBaseName)
+     end do
+  else  ! Create the specified schedule:
+     call make_schedule(schedType, np,time, name, ti,ci,di,pi, load, fileBaseName)
+  end if
   
   write(*,*)
 end program schedule
@@ -58,7 +55,7 @@ end program schedule
 subroutine read_input_file(nProcMax, name, ti,ci,di,pi, np,time, fileBaseName)
   use SUFR_system, only: find_free_io_unit, file_open_error_quit, file_read_error_quit, syntax_quit
   use SUFR_dummy, only: dumStr
-  use plotSettings, only: plotType, sclType, plSize, colour
+  use plotSettings, only: schedType, plotType, sclType, plSize, colour
   
   implicit none
   integer, intent(in) :: nProcMax
@@ -79,12 +76,15 @@ subroutine read_input_file(nProcMax, name, ti,ci,di,pi, np,time, fileBaseName)
   ! Read file header:
   read(ip,'(A)') dumStr
   
-  ! Read file body:
+  ! Read file body - plot settings:
   write(*,*)
   read(ip,*) dumStr, plotType
   read(ip,*) dumStr, colour
   read(ip,*) dumStr, sclType
   read(ip,*) dumStr, plSize
+  
+  ! Read file body - scheduler settings:
+  read(ip,*) dumStr, schedType
   read(ip,*) dumStr, time
   
   ! Read task-list header:
