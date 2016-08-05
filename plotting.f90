@@ -20,7 +20,7 @@ subroutine plot_scheduler(sched, np,time, name,ti,pi,di, ccs,run, fileBaseName)
   plotType = 'png'  ! Plot type: png, pdf, svg, eps
   sclType = 2     ! Margin scale type 1, 2
   
-  ! time x np boxes of 50px, left/bottom margin: 70px, top/right: 20px:
+  ! time x np boxes of 50px, left/bottom margin: 50px, top/right: 12px:
   call pl_square_grid(time,np, 50, 50,12, sclType, xSize,ySize, xMarg1,xMarg2, yMarg1,yMarg2, sclFac)
   
   
@@ -175,11 +175,12 @@ subroutine pl_square_grid(nx,ny, boxSize, marg1,marg2, sclType, xSize,ySize, xMa
   
   select case(sclType)
   case(1)
-     xSize = 1000
-     xPlBox = xSize - (marg1 + marg2)  ! Size of the plot box (excluding margins) in pixels
+     xSize = 1500
+     sclFac = dble(xSize)/1000.d0
+     xPlBox = xSize - nint( (marg1 + marg2)*sclFac )  ! Size of the plot box (excluding margins) in pixels
      
      rat = dble(ny)/dble(nx)
-     ySize = nint(xPlBox * rat) + (marg1 + marg2)
+     ySize = nint(xPlBox * rat) + nint( (marg1 + marg2)*sclFac )
      
   case(2)
      xSize = nx * boxSize + marg1 + marg2  ! Image size in pixels
@@ -199,7 +200,6 @@ subroutine pl_square_grid(nx,ny, boxSize, marg1,marg2, sclType, xSize,ySize, xMa
   yMarg1 =        dble(marg1)/dble(ySize) * sclFac  ! Fractional margins for plvpor()
   yMarg2 = 1.d0 - dble(marg2)/dble(ySize) * sclFac
   
-  print*,'SclFac: ', sclFac
 end subroutine pl_square_grid
 !***********************************************************************************************************************************
   
