@@ -1,5 +1,5 @@
 !***********************************************************************************************************************************
-subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load)
+subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
   use SUFR_kinds, only: double
   use SUFR_sorting, only: sorted_index_list
   use SUFR_text, only: d2s
@@ -8,7 +8,7 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load)
   implicit none
   integer, intent(in) :: np,time, ti(np),ci(np),di(np),pi(np)
   real(double), intent(in) :: load
-  character, intent(in) :: sched*(9), name(np)*(9)
+  character, intent(in) :: sched*(9), name(np)*(9), fileBaseName*(99)
   integer, allocatable :: run(:), ccs(:,:)
   integer :: it,pr, ri,ro, indx(np), prio(np),cc(np),tte(np), nSwitch,nMiss, Nopts
   real(double) :: maxLoad
@@ -238,7 +238,7 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load)
   
   
   ! Graphical plot:
-  call plot_scheduler(sched, np,time, name,ti,pi,di, ccs,run)
+  call plot_scheduler(sched, np,time, name,ti,pi,di, ccs,run, fileBaseName)
   
   
   ! Report on missed deadlines:

@@ -7,13 +7,13 @@ program schedule
   integer, parameter :: nProcMax=19  ! Maximum number of processes to expect
   integer :: np, time, ti(nProcMax),ci(nProcMax),di(nProcMax),pi(nProcMax)
   real(double) :: load
-  character :: sched*(9), name(nProcMax)*(9)
+  character :: sched*(9), name(nProcMax)*(9), fileBaseName*(99)
   
   ! Initialise libSUFR:
   call set_SUFR_constants()
   
   ! Read the input file:
-  call read_input_file(nProcMax, name, ti,ci,di,pi, np,time)
+  call read_input_file(nProcMax, name, ti,ci,di,pi, np,time, fileBaseName)
   
   ! Print some basic data about the system:
   call print_system_data(np,time, name,ti,ci,di,pi, load)
@@ -26,7 +26,7 @@ program schedule
   
   ! Create an EDF schedule:
   sched = 'EDF'  ! EDF algorithm
-  call make_schedule(sched, np,time, name, ti,ci,di,pi, load)
+  call make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
   
   
   ! Create a LLF schedule:
@@ -39,15 +39,15 @@ end program schedule
 
 
 !***********************************************************************************************************************************
-subroutine read_input_file(nProcMax, name, ti,ci,di,pi, np,time)
+subroutine read_input_file(nProcMax, name, ti,ci,di,pi, np,time, fileBaseName)
   use SUFR_system, only: find_free_io_unit, file_open_error_quit, file_read_error_quit, syntax_quit
   use SUFR_dummy, only: dumStr
   
   implicit none
   integer, intent(in) :: nProcMax
   integer, intent(out) :: ti(nProcMax),ci(nProcMax),di(nProcMax),pi(nProcMax), np,time
-  character, intent(out) :: name(nProcMax)*(9)
-  integer :: ip,ln, status
+  character, intent(out) :: name(nProcMax)*(9), fileBaseName*(99)
+  integer :: ip,ln, status, lastDot
   character :: inFile*(99)
   
   ! See whether a file name was passed on the command line:
@@ -76,6 +76,11 @@ subroutine read_input_file(nProcMax, name, ti,ci,di,pi, np,time)
   ! Close the file:
   close(ip)
   np = ln - 1  ! Number of processes/tasks found
+  
+  ! Get the base of the file name:
+  fileBaseName = trim(inFile)
+  lastDot = index(inFile,'.', back=.true.)  ! Position of the last dot in the file name
+  if(lastDot.ne.0) fileBaseName = trim(inFile(1:lastDot-1))  ! Reomve file-name extension
   
 end subroutine read_input_file
 !***********************************************************************************************************************************

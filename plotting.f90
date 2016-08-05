@@ -1,13 +1,13 @@
 !***********************************************************************************************************************************
 !> \brief  Plot a graphical scheduler
 
-subroutine plot_scheduler(sched, np,time, name,ti,pi,di, ccs,run)
+subroutine plot_scheduler(sched, np,time, name,ti,pi,di, ccs,run, fileBaseName)
   use SUFR_kinds, only: double
   use plplot, only: plsdev, plsfnam, plbox, plmtex,plfill,plptex, plpoin
   
   implicit none
   integer, intent(in) :: np,time, ti(np),pi(np),di(np), ccs(np,time),run(time)
-  character, intent(in) :: sched*(9), name(np)*(9)
+  character, intent(in) :: sched*(9), name(np)*(9), fileBaseName*(99)
   integer :: it, pr, xSize,ySize
   real(double) :: xMarg1,xMarg2,yMarg1,yMarg2, schFac
   character :: tmpStr*(9), plFileName*(99)
@@ -22,7 +22,7 @@ subroutine plot_scheduler(sched, np,time, name,ti,pi,di, ccs,run)
   call pl_square_grid(time,np, 50, 70,20, xSize,ySize, xMarg1,xMarg2, yMarg1,yMarg2, schFac)
   
   
-  plFileName = 'schedule_'//trim(sched)//'.png'
+  plFileName = trim(fileBaseName)//'_schedule_'//trim(sched)//'.png'  ! Add to the base name of the input file
   call plsfnam(trim(plFileName))                  ! Set file name
   call plsdev('pngcairo')                         ! Set plotting device: png
   
@@ -185,14 +185,6 @@ subroutine pl_square_grid(nx,ny, boxSize, marg1,marg2, xSize,ySize, xMarg1,xMarg
   yMarg1 =        dble(marg1)/dble(ySize) * schFac  ! Fractional margins for plvpor()
   yMarg2 = 1.d0 - dble(marg2)/dble(ySize) * schFac
   
-  
-  write(0,*) nx,ny
-  write(0,*) marg1,marg2  !, xPlBox
-  write(0,*) xSize,ySize  ! rat, 
-  write(0,'(4F8.3)') xMarg1,xMarg2,yMarg1,yMarg2
-  write(0,*) schFac
-  
-  !stop
 end subroutine pl_square_grid
 !***********************************************************************************************************************************
   
