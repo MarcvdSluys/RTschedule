@@ -5,7 +5,7 @@ subroutine plot_scheduler(sched, np,time, name,ti,pi,di, ccs,run, fileBaseName)
   use SUFR_kinds, only: double
   use SUFR_system, only: quit_program_error
   use plplot, only: plsdev, plsfnam, plbox, plmtex,plfill,plptex, plpoin
-  use settings, only: plotType, colour
+  use settings, only: plotType, colour, optTS
   
   implicit none
   integer, intent(in) :: np,time, ti(np),pi(np),di(np), ccs(np,time),run(time)
@@ -73,7 +73,9 @@ subroutine plot_scheduler(sched, np,time, name,ti,pi,di, ccs,run, fileBaseName)
   
   
   call plcol0(1)                              ! Black box
-  call plbox('BCGHNT',5.d0,5, 'BCGT',1.d0,0)  ! Plot box
+  if(optTS.ne.1) call plwind(0,dble(time*optTS), dble(np),0)           ! Set view port in world coordinates
+  call plbox('BCGHNT', 5.d0*optTS, 5,  'BCGT', 1.d0, 0)  ! Plot box
+  if(optTS.ne.1) call plwind(0,dble(time), dble(np),0)           ! Set view port in world coordinates
   
   
   if(colour) call plcol0(2)                        ! Red arrows, dots and crosses

@@ -6,7 +6,7 @@ module settings
   implicit none
   save
   
-  integer :: sclType, plSize
+  integer :: sclType, plSize, optTS, majFr
   character :: schedType*(19), plotType*(19)
   logical :: colour
   
@@ -18,11 +18,11 @@ end module settings
 program schedule
   use SUFR_kinds, only: double
   use SUFR_constants, only: set_SUFR_constants
-  use settings, only: schedType
+  use settings, only: schedType, optTS
   
   implicit none
   integer, parameter :: nProcMax=19  ! Maximum number of processes to expect
-  integer :: np, time, ti(nProcMax),ci(nProcMax),di(nProcMax),pi(nProcMax), iSch
+  integer :: np, time, ti(nProcMax),ci(nProcMax),di(nProcMax),pi(nProcMax), iSch, optTS0
   real(double) :: load
   character :: scheds(3)*(9), name(nProcMax)*(9), fileBaseName*(99)
   
@@ -32,8 +32,16 @@ program schedule
   ! Read the input file:
   call read_input_file(nProcMax, name, ti,ci,di,pi, np,time, fileBaseName)
   
+  
   ! Print some basic data about the system:
   call print_system_data(np,time, name,ti,ci,di,pi, load)
+  
+  if(optTS.ne.1) then
+     optTS0 = optTS
+     call rescale_task_list(np,time, ti,ci,di,pi)
+     call print_system_data(np,time, name,ti,ci,di,pi, load)
+     optTS = optTS0
+  end if
   
   
   scheds = [character(len=9) :: 'RM', 'EDF', 'LLF']
@@ -118,13 +126,14 @@ subroutine print_system_data(np,time, name,ti,ci,di,pi, load)
   use SUFR_kinds, only: double
   use SUFR_text, only: d2s
   use SUFR_numerics, only: gcd,lcm
+  use settings, only: optTS, majFr
   
   implicit none
   integer, intent(in) :: np, ti(np),ci(np),di(np),pi(np)
   integer, intent(inout) :: time
   character, intent(in) :: name(np)*(9)
   real(double), intent(out) :: load
-  integer :: pr, optts,majFr
+  integer :: pr
   real(double) :: frac
   
   ! Print task list:
@@ -166,15 +175,58 @@ subroutine print_system_data(np,time, name,ti,ci,di,pi, load)
   end if
   write(*,*)
   
-  optts = gcd(ci(1:np))
+  optTS = gcd(ci(1:np))
   write(*,*)
-  write(*,'(A,I0,A)') '  Optimal timeslice: ', optts, ' time units'
+  write(*,'(A,I0,A)') '  Optimal timeslice: ', optTS, ' time units'
   write(*,'(A,I0,A)') '  Major frame: ', majFr, ' time units'
   write(*,'(A,I0,A)') '  Minor frame: ', gcd(pi(1:np)), ' time units'
   write(*,*)
-
+  
 end subroutine print_system_data
 !***********************************************************************************************************************************
 
 
+
+!***********************************************************************************************************************************
+subroutine rescale_task_list(np,time, ti,ci,di,pi)
+  use settings, only: optTS
+  
+  implicit none
+  integer, intent(in) :: np
+  integer, intent(inout) :: time, ti(np),ci(np),di(np),pi(np)
+  integer :: ip
+  logical :: allOK
+  
+  write(*,*)
+  write(*,'(A)') '  Scaling times and periods with the optimal timeslice.'
+  write(*,'(A,I0,A)') '  This only gives the correct result if *all* numbers are divisible by ', optTS, ' - verifying...'
+  
+  allOK = .true.
+  if(time/optTS .ne. nint(dble(time)/(optTS))) allOK = .false.
+  
+  ip = 1
+  do while(allOK .and. ip.le.np)
+     if(ti(ip)/optTS .ne. nint(dble(ti(ip))/(optTS))) allOK = .false.
+     if(ci(ip)/optTS .ne. nint(dble(ci(ip))/(optTS))) allOK = .false.
+     if(di(ip)/optTS .ne. nint(dble(di(ip))/(optTS))) allOK = .false.
+     if(pi(ip)/optTS .ne. nint(dble(pi(ip))/(optTS))) allOK = .false.
+     ip = ip + 1
+  end do
+  
+  
+  if(allOK) then
+     write(*,'(A,I0,A)') '  All numbers are divisible by ', optTS, ' - rescaling the task list, and recomputing general '// &
+          'task data...'
+     time = time/optTS
+     ti(1:np) = ti(1:np)/optTS
+     ci(1:np) = ci(1:np)/optTS
+     di(1:np) = di(1:np)/optTS
+     pi(1:np) = pi(1:np)/optTS
+  else
+     write(*,'(A,I0,A)') '  Not all numbers are divisible by ', optTS, ' - NOT rescaling the task list.'
+  end if
+  
+  write(*,'(/)')
+end subroutine rescale_task_list
+!***********************************************************************************************************************************
 
