@@ -1,3 +1,19 @@
+!> \file schedule.f90  Main routines for schedule
+
+!***********************************************************************************************************************************
+!> \brief  Module to share plot settings
+module plotSettings
+  implicit none
+  save
+  
+  integer :: sclType, plSize
+  character :: plotType*(19)
+  logical :: colour
+  
+end module plotSettings
+!***********************************************************************************************************************************
+
+
 !***********************************************************************************************************************************
 program schedule
   use SUFR_kinds, only: double
@@ -42,6 +58,7 @@ end program schedule
 subroutine read_input_file(nProcMax, name, ti,ci,di,pi, np,time, fileBaseName)
   use SUFR_system, only: find_free_io_unit, file_open_error_quit, file_read_error_quit, syntax_quit
   use SUFR_dummy, only: dumStr
+  use plotSettings, only: plotType, sclType, plSize, colour
   
   implicit none
   integer, intent(in) :: nProcMax
@@ -81,6 +98,11 @@ subroutine read_input_file(nProcMax, name, ti,ci,di,pi, np,time, fileBaseName)
   fileBaseName = trim(inFile)
   lastDot = index(inFile,'.', back=.true.)  ! Position of the last dot in the file name
   if(lastDot.ne.0) fileBaseName = trim(inFile(1:lastDot-1))  ! Reomve file-name extension
+  
+  plotType = 'png'
+  colour = .false.
+  sclType = 2
+  plSize = 50
   
 end subroutine read_input_file
 !***********************************************************************************************************************************

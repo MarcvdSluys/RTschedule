@@ -5,23 +5,17 @@ subroutine plot_scheduler(sched, np,time, name,ti,pi,di, ccs,run, fileBaseName)
   use SUFR_kinds, only: double
   use SUFR_system, only: quit_program_error
   use plplot, only: plsdev, plsfnam, plbox, plmtex,plfill,plptex, plpoin
+  use plotSettings, only: plotType, colour
   
   implicit none
   integer, intent(in) :: np,time, ti(np),pi(np),di(np), ccs(np,time),run(time)
   character, intent(in) :: sched*(9), name(np)*(9), fileBaseName*(99)
-  integer :: it, pr, xSize,ySize, sclType
+  integer :: it, pr, xSize,ySize
   real(double) :: xMarg1,xMarg2,yMarg1,yMarg2, sclFac
-  character :: tmpStr*(9), plFileName*(99), plotType*(19)
-  logical :: clr
+  character :: tmpStr*(9), plFileName*(99)
   
-  ! B/W or colour?
-  clr = .true.   ! Create a colour image
-  clr = .false.  ! Create a black-and-white image
-  plotType = 'png'  ! Plot type: png, pdf, svg, eps
-  sclType = 2     ! Margin scale type 1, 2
   
-  ! time x np boxes of 50px, left/bottom margin: 50px, top/right: 12px:
-  call pl_square_grid(time,np, 50, 50,12, sclType, xSize,ySize, xMarg1,xMarg2, yMarg1,yMarg2, sclFac)
+  call pl_square_grid(time,np, xSize,ySize, xMarg1,xMarg2, yMarg1,yMarg2, sclFac)  ! time x np boxes
   
   
   select case(trim(plotType))
@@ -82,8 +76,8 @@ subroutine plot_scheduler(sched, np,time, name,ti,pi,di, ccs,run, fileBaseName)
   call plbox('BCGHNT',5.d0,5, 'BCGT',1.d0,0)  ! Plot box
   
   
-  if(clr) call plcol0(2)                        ! Red arrows, dots and crosses
-  call plwidth(1.5d0*sclFac)                    ! Thicker lines
+  if(colour) call plcol0(2)                        ! Red arrows, dots and crosses
+  call plwidth(2.0d0*sclFac)                    ! Thicker lines
   do it=0,time
      
      do pr=1,np
@@ -149,33 +143,31 @@ end subroutine plot_scheduler
 !***********************************************************************************************************************************
 !> \brief  Compute the image and margin size for a PLplot plot with given plot-box size and margins in pixels
 !!
-!! \param boxSize   Pixels for the length of one box
+!! \param sclType  Margin-scaling method: 1) specify the image size (in pixels) and work from there (image size is important),
+!!                                        2) specify the size (length) of a single box (in pixels - image resolution is important)
+!! \param plSize    Pixels for the width of the image (sclType=1) or for the length of one box (sclType=2)
 !! \param marg1     Pixels for left/bottom margin
 !! \param marg2     Pixels for right/top margin 
 
-subroutine pl_square_grid(nx,ny, boxSize, marg1,marg2, sclType, xSize,ySize, xMarg1,xMarg2, yMarg1,yMarg2, sclFac)
+subroutine pl_square_grid(nx,ny, xSize,ySize, xMarg1,xMarg2, yMarg1,yMarg2, sclFac)
   use SUFR_system, only: quit_program_error
   use plplot, only: plflt
+  use plotSettings, only: sclType, plSize
   
   implicit none
-  integer, intent(in) :: nx,ny, boxSize, marg1,marg2, sclType
+  integer, intent(in) :: nx,ny
   integer, intent(out) :: xSize,ySize
   real(plflt), intent(out) :: xMarg1,xMarg2, yMarg1,yMarg2, sclFac
-  integer :: xPlBox
+  integer :: marg1,marg2, xPlBox
   real(plflt) :: rat
   
-  ! sclType:
-  ! There are (at least) two ways to scale the image and get a (roughly) square grid:
-  !   1) the image always gets the same size, if the image becomes very large and is
-  !      used in a document, it will be shrunk and become very small
-  !   2) the font size scales with the image width, becomes larger for larger images,
-  !      so that the absolute margins need to grow
-  
   sclFac = 1.d0
+  marg1 = 50  ! Left/bottom margin - needs space for plot labels
+  marg2 = 12  ! Right/top margin - needs space for large number labels sticking out
   
   select case(sclType)
   case(1)
-     xSize = 1500
+     xSize = plSize
      sclFac = dble(xSize)/1000.d0
      xPlBox = xSize - nint( (marg1 + marg2)*sclFac )  ! Size of the plot box (excluding margins) in pixels
      
@@ -183,11 +175,11 @@ subroutine pl_square_grid(nx,ny, boxSize, marg1,marg2, sclType, xSize,ySize, xMa
      ySize = nint(xPlBox * rat) + nint( (marg1 + marg2)*sclFac )
      
   case(2)
-     xSize = nx * boxSize + marg1 + marg2  ! Image size in pixels
+     xSize = nx * plSize + marg1 + marg2  ! Image size in pixels
      sclFac = dble(xSize)/1000.d0                           ! Font size -> margin scales with image width
-     xSize = nx * boxSize + nint((marg1 + marg2) * sclFac)  ! Image size in pixels
+     xSize = nx * plSize + nint((marg1 + marg2) * sclFac)  ! Image size in pixels
      
-     ySize = ny * boxSize + nint((marg1 + marg2) * sclFac) 
+     ySize = ny * plSize + nint((marg1 + marg2) * sclFac) 
      
   case default
      call quit_program_error('pl_square_grid():  Unknown scale type', 1)
