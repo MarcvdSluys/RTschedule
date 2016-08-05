@@ -1,8 +1,0 @@
-#task  t      c      d      p
-
-time:  0                           # 0: use major frame/hyperperiod
-T1     0      1      5      5
-T2     0      2     10     10
-T3     0      9     15     15
-
-

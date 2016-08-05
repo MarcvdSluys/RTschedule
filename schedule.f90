@@ -77,13 +77,21 @@ subroutine read_input_file(nProcMax, name, ti,ci,di,pi, np,time, fileBaseName)
   if(status.ne.0) call file_open_error_quit(trim(inFile), 1, 1)  ! 1: input file, 1: status: not ok
   
   ! Read file header:
-  do ln=1,1
-     read(ip,'(A)') dumStr
-  end do
+  read(ip,'(A)') dumStr
   
   ! Read file body:
   write(*,*)
+  read(ip,*) dumStr, plotType
+  read(ip,*) dumStr, colour
+  read(ip,*) dumStr, sclType
+  read(ip,*) dumStr, plSize
   read(ip,*) dumStr, time
+  
+  ! Read task-list header:
+  read(ip,'(A)') dumStr
+  read(ip,'(A)') dumStr
+  
+  ! Read task list:
   do ln=1,nProcMax
      read(ip,*,iostat=status) name(ln), ti(ln),ci(ln),di(ln),pi(ln)
      if(status.lt.0) exit
@@ -98,11 +106,6 @@ subroutine read_input_file(nProcMax, name, ti,ci,di,pi, np,time, fileBaseName)
   fileBaseName = trim(inFile)
   lastDot = index(inFile,'.', back=.true.)  ! Position of the last dot in the file name
   if(lastDot.ne.0) fileBaseName = trim(inFile(1:lastDot-1))  ! Reomve file-name extension
-  
-  plotType = 'png'
-  colour = .false.
-  sclType = 2
-  plSize = 50
   
 end subroutine read_input_file
 !***********************************************************************************************************************************

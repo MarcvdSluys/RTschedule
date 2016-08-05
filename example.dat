@@ -1,0 +1,14 @@
+# example.dat: example input file for Schedule - Formatting is important!
+
+plotType  png                       # png, svg, pdf, eps
+colour    .false.                   # .false.: B/W, .true.: colour
+sclType   1                         # 1: specify image width (pixels, e.g. 1000) @plSize,  2: specify box width (pixels, e.g. 25) @plSize - "resolution mode"
+plSize    1500                      # Image width if sclType=1, Box width if sclType=2 (pixels)
+time      30                        # Arbitrary units. 0: use major frame/hyperperiod
+
+#task  t      c      d      p
+T1     0      1      5      5
+T2     0      2     10     10
+T3     0      5     15     15
+
+
