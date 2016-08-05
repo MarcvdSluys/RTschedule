@@ -2,7 +2,7 @@
 
 !***********************************************************************************************************************************
 !> \brief  Module to share plot settings
-module plotSettings
+module settings
   implicit none
   save
   
@@ -10,7 +10,7 @@ module plotSettings
   character :: schedType*(19), plotType*(19)
   logical :: colour
   
-end module plotSettings
+end module settings
 !***********************************************************************************************************************************
 
 
@@ -18,7 +18,7 @@ end module plotSettings
 program schedule
   use SUFR_kinds, only: double
   use SUFR_constants, only: set_SUFR_constants
-  use plotSettings, only: schedType
+  use settings, only: schedType
   
   implicit none
   integer, parameter :: nProcMax=19  ! Maximum number of processes to expect
@@ -55,7 +55,7 @@ end program schedule
 subroutine read_input_file(nProcMax, name, ti,ci,di,pi, np,time, fileBaseName)
   use SUFR_system, only: find_free_io_unit, file_open_error_quit, file_read_error_quit, syntax_quit
   use SUFR_dummy, only: dumStr
-  use plotSettings, only: schedType, plotType, sclType, plSize, colour
+  use settings, only: schedType, plotType, sclType, plSize, colour
   
   implicit none
   integer, intent(in) :: nProcMax

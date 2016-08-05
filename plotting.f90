@@ -5,7 +5,7 @@ subroutine plot_scheduler(sched, np,time, name,ti,pi,di, ccs,run, fileBaseName)
   use SUFR_kinds, only: double
   use SUFR_system, only: quit_program_error
   use plplot, only: plsdev, plsfnam, plbox, plmtex,plfill,plptex, plpoin
-  use plotSettings, only: plotType, colour
+  use settings, only: plotType, colour
   
   implicit none
   integer, intent(in) :: np,time, ti(np),pi(np),di(np), ccs(np,time),run(time)
@@ -152,7 +152,7 @@ end subroutine plot_scheduler
 subroutine pl_square_grid(nx,ny, xSize,ySize, xMarg1,xMarg2, yMarg1,yMarg2, sclFac)
   use SUFR_system, only: quit_program_error
   use plplot, only: plflt
-  use plotSettings, only: sclType, plSize
+  use settings, only: sclType, plSize
   
   implicit none
   integer, intent(in) :: nx,ny
