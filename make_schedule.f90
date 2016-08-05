@@ -262,6 +262,7 @@ end subroutine make_schedule
 !> \brief  'Plot' an ascii scheduler
 
 subroutine plot_ascii_scheduler(sched, np,time, name,ti,pi,di, run, detail)
+  use settings, only: optTS
   implicit none
   integer, intent(in) :: np,time, ti(np),pi(np),di(np), run(time)
   character, intent(in) :: sched*(9), name(np)*(9)
@@ -271,6 +272,8 @@ subroutine plot_ascii_scheduler(sched, np,time, name,ti,pi,di, run, detail)
   write(*,*)
   write(*,'(A)') '  '//trim(sched)//' ASCII schedule:'
   
+  
+  ! Print schedule for each task:
   do pr=1,np
      write(*,'(A4,3x)', advance='no') trim(name(pr))
      do it=1,time
@@ -297,11 +300,13 @@ subroutine plot_ascii_scheduler(sched, np,time, name,ti,pi,di, run, detail)
      write(*,*)
   end do  ! pr
   
+  
+  ! Print time labels:
   write(*,'(A4,I3)', advance='no') 't',0
   do it=1,time
      if(mod(it,5).eq.0) then
         if(detail) write(*,'(5x)', advance='no')
-        write(*,'(I5)', advance='no') it
+        write(*,'(I5)', advance='no') it*optTS
      end if
   end do
   write(*,*)
