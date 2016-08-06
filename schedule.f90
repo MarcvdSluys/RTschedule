@@ -189,6 +189,7 @@ end subroutine print_system_data
 
 !***********************************************************************************************************************************
 subroutine rescale_task_list(np,time, ti,ci,di,pi)
+  use SUFR_numerics, only: dne
   use settings, only: optTS
   
   implicit none
@@ -202,14 +203,20 @@ subroutine rescale_task_list(np,time, ti,ci,di,pi)
   write(*,'(A,I0,A)') '  This only gives the correct result if *all* numbers are divisible by ', optTS, ' - verifying...'
   
   allOK = .true.
-  if(time/optTS .ne. nint(dble(time)/(optTS))) allOK = .false.
+  if(time/optTS .ne. nint(dble(time)/dble(optTS))) allOK = .false.
+  if( dne( dble(time/optTS), dble(time)/dble(optTS), 0.1d0) ) allOK = .false.
   
   ip = 1
   do while(allOK .and. ip.le.np)
-     if(ti(ip)/optTS .ne. nint(dble(ti(ip))/(optTS))) allOK = .false.
-     if(ci(ip)/optTS .ne. nint(dble(ci(ip))/(optTS))) allOK = .false.
-     if(di(ip)/optTS .ne. nint(dble(di(ip))/(optTS))) allOK = .false.
-     if(pi(ip)/optTS .ne. nint(dble(pi(ip))/(optTS))) allOK = .false.
+     if(ti(ip)/optTS .ne. nint(dble(ti(ip))/dble(optTS))) allOK = .false.
+     if(ci(ip)/optTS .ne. nint(dble(ci(ip))/dble(optTS))) allOK = .false.
+     if(di(ip)/optTS .ne. nint(dble(di(ip))/dble(optTS))) allOK = .false.
+     if(pi(ip)/optTS .ne. nint(dble(pi(ip))/dble(optTS))) allOK = .false.
+     
+     if( dne( dble(ti(ip)/optTS), dble(ti(ip))/dble(optTS), 0.1d0) ) allOK = .false.
+     if( dne( dble(ci(ip)/optTS), dble(ci(ip))/dble(optTS), 0.1d0) ) allOK = .false.
+     if( dne( dble(di(ip)/optTS), dble(di(ip))/dble(optTS), 0.1d0) ) allOK = .false.
+     if( dne( dble(pi(ip)/optTS), dble(pi(ip))/dble(optTS), 0.1d0) ) allOK = .false.
      ip = ip + 1
   end do
   
