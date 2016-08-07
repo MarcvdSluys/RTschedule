@@ -2,7 +2,9 @@
 
 RT Schedule is a realtime-schedule generator to create and present simple and idealised RT schedules from task lists.  The purpose is to compute the basic properties of a task set and create a schedule using the rate monotonic (RM), earliest deadline first (EDF) and least laxity first (LLF) algorithms.  The program uses simple, idealised systems, since students must be able to schedule them manually.  RT Schedule computes the data and generates clear graphs for lecture notes and exams.
 
-The program is written in Fortran, needs the [libSUFR](http://libsufr.sourceforge.net) package and uses [PLplot](http://plplot.sourceforge.net/) to generate graphics.  RT Scheduler can be run from the command line, and requires an input file in order to know what to do.  An example input file example.dat is provided.  The task list includes the first occurrence of a task (t), the computational time (per period; c), the relative deadline (d) and the period (p), all in arbitrary units.  The output from example.dat looks as follows:
+RTschedule can be used under the conditions of the GNU General Public Licence version 3 [(GPLv3)](https://opensource.org/licenses/GPL-3.0).  The program is written in Fortran, needs the [libSUFR](http://libsufr.sourceforge.net) package and uses [PLplot](http://plplot.sourceforge.net/) to generate graphics.  If PLplot is not installed at compile time, the code will be compiled without graphics support.  The default installer uses [CMake](https://cmake.org/).  See the [doc/INSTALL](doc/INSTALL) file for installation instructions.
+
+RT Scheduler can be run from the command line, and requires an input file in order to know what to do.  An example input file example.dat is provided.  The task list includes the first occurrence of a task (t), the computational time (per period; c), the relative deadline (d) and the period (p), all in arbitrary units.  The output from example.dat looks as follows:
 
 	
 	$ ./rtschedule example.dat
