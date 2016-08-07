@@ -69,10 +69,60 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
      else
         write(*,'(A)') ', so task set is NOT SCHEDULABLE indefinately.'
      end if
+     write(*,*)
   end if
   
   
   ! Start scheduling:
+  
+  ! Write header lines:
+  select case(trim(sched))
+  case('RM')
+     write(*,'(A11,3x)', advance='no') 'Timeslice'
+     do pr=1,np
+        write(*,'(A12)', advance='no') name(pr)
+     end do
+     write(*,'(A)') ' Running  Notes'
+     
+     
+     write(*,'(10x)', advance='no')
+     do pr=1,np
+        write(*,'(5x,A7)', advance='no') 'cpu  ev'
+     end do
+     write(*,'(/)')
+     
+  case('EDF')
+     write(*,'(A11,3x)', advance='no') 'Timeslice'
+     do pr=1,np
+        write(*,'(A15)', advance='no') name(pr)
+     end do
+     write(*,'(1x,A)') 'Running  Notes'
+     
+     
+     write(*,'(10x)', advance='no')
+     do pr=1,np
+        write(*,'(A15)', advance='no') 'cpu  dl ev'
+     end do
+     write(*,'(/)')
+     
+  case('LLF')
+     write(*,'(A11,3x)', advance='no') 'Timeslice'
+     do pr=1,np
+        write(*,'(A15)', advance='no') name(pr)
+     end do
+     write(*,'(1x,A)') 'Running Lax  Notes'
+     
+     
+     write(*,'(10x)', advance='no')
+     do pr=1,np
+        write(*,'(A15)', advance='no') 'lax cpu ev'
+     end do
+     write(*,'(/)')
+     
+  case default
+     call quit_program_error('make_schedule():  unknown scheduler: '//trim(sched), 1)
+  end select
+  
   
   ! Initial computation times and laxities/priorities:
   do pr=1,np
@@ -123,27 +173,30 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
         write(ttepr,'(I0)') tte(pr)
         
         select case(trim(sched))
-        case('RM')
+        case('RM')  ! Detailed RM data per process
            if(pr.eq.ri) then
               ccpr = '_'//trim(ccpr)//'_'
            else
               ccpr = ' '//trim(ccpr)
            end if
            
-           write(*,'(5x,A4)', advance='no') ccpr
-        case('EDF')
+           write(*,'(5x,A4,1x)', advance='no') ccpr
+           
+        case('EDF')  ! Detailed EDF data per process
            if(pr.eq.ri) then
               ccpr = '_'//trim(ccpr)//'_'
            else
               ccpr = ' '//trim(ccpr)
            end if
+           if(cc(pr).eq.0) priopr = '-'
            
            write(*,'(5x,A4)', advance='no') ccpr
-           write(*,'(A3)', advance='no') trim(priopr)
-        case('LLF')
+           write(*,'(A3,1x)', advance='no') trim(priopr)
+           
+        case('LLF')  ! Detailed LLF data per process
            if(cc(pr).eq.0) then
               priopr = '-'
-              ttepr = '-'
+              ccpr = '-'
            end if
            
            if(pr.eq.ri) then
@@ -153,6 +206,8 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
            end if
            
            write(*,'(5x,A4)', advance='no') priopr
+           write(*,'(1x,A3)', advance='no') ccpr
+           
         case default
            call quit_program_error('make_schedule():  unknown scheduler: '//trim(sched), 1)
         end select
@@ -160,25 +215,36 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
         
         ! Label new event:
         if(it.ge.ti(pr) .and. tte(pr).eq.0) then  ! New event
-           write(*,'(1x,A)', advance='no') 'e'
+           write(*,'(A)', advance='no') 'e'
         else
-           write(*,'(1x,A)', advance='no') ' '
+           write(*,'(A)', advance='no') ' '
         end if
         
+        ! Label deadline:
+        if( mod( ti(pr)+di(pr)-it + pi(pr)*1000, pi(pr)).eq.0 ) then
+           write(*,'(A)', advance='no') 'd'
+        else
+           write(*,'(A)', advance='no') ' '
+        end if
+           
      end do  ! pr
      
      
      select case(trim(sched))
-     case('RM','EDF')
-        ! Print currently running task:
-        write(*,'(5x,A,I0)', advance='no') 'run: ',ri
-     case('LLF')
-        ! Print which task is running + its laxity:
-        if(ri.eq.0) then  ! No task is running
-           write(*,'(5x,A)', advance='no') 'run: -,  lax: -,  cpu: -'
+     case('RM','EDF')  ! Print currently running task:
+        if(ri.eq.0) then
+           write(*,'(2x,A9)', advance='no') '-'  ! No task is running
         else
-           write(*,'(5x,3(A,I0))', advance='no') 'run: ',ri, ',  lax: ', prio(ri), ',  cpu: ', cc(ri)
+           write(*,'(2x,A9)', advance='no') trim(name(ri))  ! Running task
         end if
+        
+     case('LLF')  ! Print which task is running + its laxity:
+        if(ri.eq.0) then  ! No task is running
+           write(*,'(3x,A8,A4)', advance='no') '-','-'
+        else
+           write(*,'(3x,A8,I4)', advance='no') trim(name(ri)), prio(ri)  ! Running task and its laxity
+        end if
+        
      case default
         call quit_program_error('make_schedule():  unknown scheduler: '//trim(sched), 1)
      end select
@@ -186,7 +252,7 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
      
      ! Label task switch:
      if(it.gt.1 .and. ri.ne.ro) then
-        write(*,'(2x,A)', advance='no') 'switch'
+        write(*,'(3x,A)', advance='no') 'Switch'
         nSwitch = nSwitch + 1
         if(ro.ne.0) then
            if(cc(ro).gt.0) then
@@ -202,9 +268,9 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
         Nopts = count(prio(1:np).eq.minval(prio(1:np), cc(1:np).gt.0) .and. cc(1:np).gt.0)  ! # tasks with Ci>0 and lowest laxity
         if(Nopts.gt.1) then   ! Have a choice
            if(ri.eq.ro) then  ! No choice - keep current task running
-              write(*,'(2x,A)', advance='no') 'Choice: keep same task'
+              write(*,'(3x,A)', advance='no') 'Choice: keep same task'
            else               ! True choice
-              write(*,'(2x,A)', advance='no') 'Choice: pick first task'
+              write(*,'(3x,A)', advance='no') 'Choice: pick first task'
            end if
         end if
      end if
