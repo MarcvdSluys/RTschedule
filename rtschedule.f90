@@ -1,4 +1,4 @@
-!> \file schedule.f90  Main routines for schedule
+!> \file rtschedule.f90  Main routines for RT Schedule
 
 
 
