@@ -4,7 +4,7 @@ RT Schedule is a realtime-schedule generator to create and present simple and id
 
 The program is written in Fortran, needs the [libSUFR](http://libsufr.sourceforge.net) package and uses [PLplot](http://plplot.sourceforge.net/) to generate graphics.  RT Scheduler can be run from the command line, and requires an input file in order to know what to do.  An example input file example.dat is provided.  The task list includes the first occurrence of a task (t), the computational time (per period; c), the relative deadline (d) and the period (p), all in arbitrary units.  The output from example.dat looks as follows:
 
-    
+	
 	$ ./rtschedule example.dat
 	
 	
@@ -208,6 +208,9 @@ The program is written in Fortran, needs the [libSUFR](http://libsufr.sourceforg
    
      No deadlines were missed: the system can be scheduled for 30 time units.
      16 task switches (1.76 time units per run).
-   
-   
-   
+     
+     
+     
+![Example RM schedule](example_schedule_RM.png)
+
+
