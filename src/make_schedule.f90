@@ -322,8 +322,8 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
   
   
   ! 'Plot' an ascii scheduler:
-  call plot_ascii_scheduler(sched, np,time, name,ti,pi,di, run, .false.)  ! Detail: .false.
-  call plot_ascii_scheduler(sched, np,time, name,ti,pi,di, run, .true.)   ! Detail: .true.
+  call plot_ascii_scheduler(sched, np,time, name,ti,pi,di, run,ccs, .false.)  ! Detail: .false.
+  call plot_ascii_scheduler(sched, np,time, name,ti,pi,di, run,ccs, .true.)   ! Detail: .true.
   
   
   ! Graphical plot:
@@ -350,22 +350,26 @@ end subroutine make_schedule
 !***********************************************************************************************************************************
 !> \brief  'Plot' an ascii scheduler
 
-subroutine plot_ascii_scheduler(sched, np,time, name,ti,pi,di, run, detail)
+subroutine plot_ascii_scheduler(sched, np,time, name,ti,pi,di, run,ccs, detail)
   use settings, only: optTS
   implicit none
-  integer, intent(in) :: np,time, ti(np),pi(np),di(np), run(time)
+  integer, intent(in) :: np,time, ti(np),pi(np),di(np), run(time), ccs(np,time)
   character, intent(in) :: sched*(9), name(np)*(9)
   logical, intent(in) :: detail
   integer :: it, pr
   
   write(*,*)
-  write(*,'(A)') '  '//trim(sched)//' ASCII schedule:'
+  if(detail) then
+     write(*,'(A)') '  '//trim(sched)//' ASCII schedule with events and deadlines:'
+  else
+     write(*,'(A)') '  '//trim(sched)//' ASCII schedule:'
+  end if
   
   
   ! Print schedule for each task:
   do pr=1,np
-     write(*,'(A4,3x)', advance='no') trim(name(pr))
-     do it=1,time
+     write(*,'(A4,1x)', advance='no') trim(name(pr))
+     do it=0,time
         
         ! Mark runtime:
         if(run(it).eq.pr) then
@@ -374,12 +378,18 @@ subroutine plot_ascii_scheduler(sched, np,time, name,ti,pi,di, run, detail)
            write(*,'(A)', advance='no') ' '
         end if
         
-        ! Mark event/deadline:
+        ! Mark event/deadline:  priority: missed deadline, event, non-missed deadline, nothing (space):
         if(detail) then
-           if( mod( ti(pr)-it + pi(pr)*1000, pi(pr)).eq.0 ) then  ! Next event
+           if( mod( ti(pr)+di(pr)-it + pi(pr)*1000, pi(pr)).eq.0 )  then  ! Deadline
+              if(it.ne.0 .and. ccs(pr,it).gt.0) then
+                 write(*,'(A)', advance='no') 'D'                         ! Missed deadline
+              else if( mod( ti(pr)-it + pi(pr)*1000, pi(pr)).eq.0 ) then  ! Event == deadline
+                 write(*,'(A)', advance='no') 'e'
+              else
+                 write(*,'(A)', advance='no') 'd'                         ! Deadline != event
+              end if
+           else if( mod( ti(pr)-it + pi(pr)*1000, pi(pr)).eq.0 ) then     ! Event != deadline
               write(*,'(A)', advance='no') 'e'
-           else if( mod( ti(pr)+di(pr)-it + pi(pr)*1000, pi(pr)).eq.0 )  then ! Next deadline != event
-              write(*,'(A)', advance='no') 'd'
            else
               write(*,'(A)', advance='no') ' '
            end if
