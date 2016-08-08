@@ -139,16 +139,16 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
   
   do it=1,time  ! Note: this is the time unit that ENDS at t=ti
      
-     ! Save cc for later use:
-     ccs(1:np,it) = cc(1:np)
-     
-
      ! Determine running task:
      ri = minloc(prio(1:np), 1, cc(1:np).gt.0)  ! Running task: minimum prio and cc>0
      if(ri*ro.ne.0) then
         if(it.ne.1 .and. ri.ne.ro .and. cc(ro).gt.0 .and. prio(ro).le.prio(ri)) ri = ro  ! Keep old task running if prios are equal
      end if
-     run(it) = ri  ! Save for later use
+     
+     
+     ! Save the current computational times and running task for later use:
+     ccs(1:np,it) = cc(1:np)
+     run(it) = ri
      
      
      ! Report missed deadlines:

@@ -64,13 +64,15 @@ subroutine plot_scheduler(sched, np,time, name,ti,pi,di, ccs,run, fileBaseName)
      end if
      
      ! Print remaining cpu time:
-     if(it.gt.1) then  ! Can't have a task switch in timeslise 0-1
-        if(run(it).ne.run(it-1) .and. run(it-1).ne.0) then  ! There was a task switch
-           if(ccs(run(it-1),it-1).gt.1) then  ! CPU time left for the old task in the previous timesl. - ccs(pr,it).gt.0 won't work if d=p
+     if(it.gt.1) then                         ! Can't have a task switch in timeslise 0-1
+        pr = run(it-1)                        ! Task running before the switch
+        if(run(it).ne.pr .and. pr.ne.0) then  ! There was a task switch
+           if(ccs(pr,it-1).gt.1) then         ! CPU time left for the old task in the previous timeslice
+              !                                 if(ccs(pr,it).gt.0) won't work if di == pi and laxity=0
               
               call plcol0(1)                              ! Black text
-              write(tmpStr,'(I0,A)') ccs(run(it-1),it), '>'
-              call plptex(dble(it-1), dble(run(it-1)-0.5d0), 1.d0,0.d0, 1.d0, trim(tmpStr))
+              write(tmpStr,'(I0,A)') ccs(pr,it), '>'
+              call plptex(dble(it-1), dble(pr-0.5d0), 1.d0,0.d0, 1.d0, trim(tmpStr))
               
            end if
         end if
@@ -111,12 +113,14 @@ subroutine plot_scheduler(sched, np,time, name,ti,pi,di, ccs,run, fileBaseName)
      end do  ! pr
      
      ! Mark a completed task:
-     if(it.gt.1) then  ! Can't have a task switch in timeslise 0-1
-        if(run(it).ne.run(it-1) .and. run(it-1).ne.0) then  ! There must be a task switch
-           if(ccs(run(it-1),it-1).le.1) then  ! <=1 time unit left for old task in the prev. timesl. - ccs(pr,it).le.0 won't work if d=p
-              call plssym(7.d0, fontSize)  ! Larger symbols
-              call plpoin([dble(it-1)], [dble(run(it-1))], 17)
-              call plssym(5.d0, fontSize)  ! Default symbol size
+     if(it.gt.1) then                         ! Can't have a task switch in timeslise 0-1
+        pr = run(it-1)                        ! Task running before the switch
+        if(run(it).ne.pr .and. pr.ne.0) then  ! There must be a task switch
+           if(ccs(pr,it-1).le.1) then         ! Less than 1 time unit left for old task in the previous timeslice
+              !                                 if(ccs(pr,it).le.0) won't work if di == pi and laxity=0
+              call plssym(7.d0, fontSize)     ! Larger symbols
+              call plpoin([dble(it-1)], [dble(pr)], 17)
+              call plssym(5.d0, fontSize)     ! Default symbol size
            end if
         end if
      end if
