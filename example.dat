@@ -1,4 +1,4 @@
-# example.dat: example input file for Schedule - Formatting is important!
+# example.dat: example input file for RT Schedule - Formatting is important! - rtschedule.sf.net
 
 plotType    png                     # png, svg, pdf, or eps
 colour      .false.                 # .false.: B/W, .true.: colour

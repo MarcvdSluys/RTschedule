@@ -80,7 +80,7 @@ end program schedule
 
 !***********************************************************************************************************************************
 subroutine read_input_file(nProcMax, name, ti,ci,di,pi, np,time, fileBaseName)
-  use SUFR_system, only: find_free_io_unit, file_open_error_quit, file_read_error_quit, syntax_quit
+  use SUFR_system, only: find_free_io_unit, file_open_error_quit, file_read_error_quit, syntax_quit, file_read_end_error
   use SUFR_dummy, only: dumStr
   use settings, only: schedType, plotType, scaleType, plotSize, fontSize, colour
   
@@ -104,17 +104,30 @@ subroutine read_input_file(nProcMax, name, ti,ci,di,pi, np,time, fileBaseName)
   ! Read file header:
   read(ip,'(A)') dumStr
   
+  
   ! Read file body - plot settings:
   write(*,*)
-  read(ip,*) dumStr, plotType
-  read(ip,*) dumStr, colour
-  read(ip,*) dumStr, scaleType
-  read(ip,*) dumStr, plotSize
-  read(ip,*) dumStr, fontSize
+  read(ip,*, iostat=status) dumStr, plotType
+  if(status.ne.0) call file_read_end_error(trim(inFile), 3, status, 1, 1, message='expected variable: plotType')
+  
+  read(ip,*,iostat=status) dumStr, colour
+  if(status.ne.0) call file_read_end_error(trim(inFile), 4, status, 1, 1, message='expected variable: colour')
+  
+  read(ip,*,iostat=status) dumStr, scaleType
+  if(status.ne.0) call file_read_end_error(trim(inFile), 5, status, 1, 1, message='expected variable: scaleType')
+  
+  read(ip,*,iostat=status) dumStr, plotSize
+  if(status.ne.0) call file_read_end_error(trim(inFile), 6, status, 1, 1, message='expected variable: plotSize')
+  
+  read(ip,*,iostat=status) dumStr, fontSize
+  if(status.ne.0) call file_read_end_error(trim(inFile), 7, status, 1, 1, message='expected variable: fontSize')
+  
   
   ! Read file body - scheduler settings:
-  read(ip,*) dumStr, schedType
-  read(ip,*) dumStr, time
+  read(ip,*,iostat=status) dumStr, schedType
+  if(status.ne.0) call file_read_end_error(trim(inFile), 9, status, 1, 1, message='expected variable: schedType')
+  read(ip,*,iostat=status) dumStr, time
+  if(status.ne.0) call file_read_end_error(trim(inFile), 10, status, 1, 1, message='expected variable: time')
   
   ! Read task-list header:
   read(ip,'(A)') dumStr
@@ -124,9 +137,9 @@ subroutine read_input_file(nProcMax, name, ti,ci,di,pi, np,time, fileBaseName)
   do ln=1,nProcMax
      read(ip,*,iostat=status) name(ln), ti(ln),ci(ln),di(ln),pi(ln)
      if(status.lt.0) exit
-     if(status.gt.0) call file_read_error_quit(trim(inFile), ln, 0)
+     if(status.gt.0) call file_read_error_quit(trim(inFile), 12+ln, 0, message='expected row with task properties')
   end do  ! ln
-
+  
   ! Close the file:
   close(ip)
   np = ln - 1  ! Number of processes/tasks found
