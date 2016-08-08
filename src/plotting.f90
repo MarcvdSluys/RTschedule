@@ -71,7 +71,7 @@ subroutine plot_scheduler(sched, np,time, name,ti,pi,di, ccs,run, fileBaseName)
               !                                 if(ccs(pr,it).gt.0) won't work if di == pi and laxity=0
               
               call plcol0(1)                              ! Black text
-              write(tmpStr,'(I0,A)') ccs(pr,it), '>'
+              write(tmpStr,'(I0,A)') ccs(pr,it)*optTS, '>'
               call plptex(dble(it-1), dble(pr-0.5d0), 1.d0,0.d0, 1.d0, trim(tmpStr))
               
            end if
