@@ -99,7 +99,7 @@ subroutine plot_scheduler(sched, np,time, name,ti,pi,di, ccs,run, fileBaseName)
            call plarrow( 2, dble([it,it]), dble([pr-1,pr]), 0.25d0*fontSize, 25.d0)  ! len = 0.25, angle 25d
            ! Mark missed deadlines:
            if(it.gt.0) then
-              if(ccs(pr,it).gt.0) then  ! Process pr misses a deadline at t=it
+              if( (pr.eq.run(it) .and. ccs(pr,it).gt.1) .or. (pr.ne.run(it) .and. ccs(pr,it).gt.0) ) then  ! pr misses deadl @t=it
                  call plssym(10.d0, fontSize)  ! Huge symbols
                  call plpoin(dble([it]), dble([pr])-0.5d0, 5)  ! Cross
                  call plssym(5.d0, fontSize)  ! Default symbol size
