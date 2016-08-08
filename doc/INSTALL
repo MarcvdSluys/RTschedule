@@ -18,9 +18,9 @@ Makefile or compile and link the code manually.
 RTschedule needs the Fortran library libSUFR in order to compile and run.  libSUFR is
 free and open software, and available under the GPL v3 from http://libsufr.sf.net/.
 
-If you want graphical output, the PLplot library must be installed during compile and
-run time.  PLplot is also free and open software, and is available under the LGPL-2
-licence from http://plplot.sourceforge.net/
+If you want graphical output, the PLplot library with support for cairo must be 
+installed during compile and run time.  PLplot is also free and open software, and is 
+available under the LGPL-2 licence from http://plplot.sourceforge.net/
 
 
 UNPACKING:

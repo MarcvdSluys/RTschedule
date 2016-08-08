@@ -34,18 +34,9 @@ subroutine plot_scheduler(sched, np,time, name,ti,pi,di, ccs,run, fileBaseName)
   
   
   select case(trim(plotType))
-  case('eps')  ! MS Word can't do pdf or svg(!) - turns out it has difficulties with eps as well...
-     plFileName = trim(fileBaseName)//'_schedule_'//trim(sched)//'.eps'  ! Add to the base name of the input file
-     call plsdev('epscairo')                         ! Set plotting device: eps
-  case('pdf')
-     plFileName = trim(fileBaseName)//'_schedule_'//trim(sched)//'.pdf'  ! Add to the base name of the input file
-     call plsdev('pdfcairo')                         ! Set plotting device: pdf
-  case('png')
-     plFileName = trim(fileBaseName)//'_schedule_'//trim(sched)//'.png'  ! Add to the base name of the input file
-     call plsdev('pngcairo')                         ! Set plotting device: png
-  case('svg')
-     plFileName = trim(fileBaseName)//'_schedule_'//trim(sched)//'.svg'  ! Add to the base name of the input file
-     call plsdev('svgcairo')                         ! Set plotting device: svg
+  case('eps','pdf','png','svg')  ! All valid types
+     plFileName = trim(fileBaseName)//'_schedule_'//trim(sched)//'.'//trim(plotType)  ! Add to the base name of the input file
+     call plsdev(trim(plotType)//'cairo')                                             ! Set plotting device, use cairo
   case default
      call quit_program_error('Plot type unknown: '//trim(plotType)//' - use one of png, pdf, svg', 1)
   end select
