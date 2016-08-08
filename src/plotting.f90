@@ -65,8 +65,8 @@ subroutine plot_scheduler(sched, np,time, name,ti,pi,di, ccs,run, fileBaseName)
      
      ! Print remaining cpu time:
      if(it.gt.1) then  ! Can't have a task switch in timeslise 0-1
-        if(run(it).ne.run(it-1) .and. run(it-1).ne.0) then  ! There must be a task switch
-           if(ccs(run(it-1),it).gt.0) then  ! CPU time left for the old task
+        if(run(it).ne.run(it-1) .and. run(it-1).ne.0) then  ! There was a task switch
+           if(ccs(run(it-1),it-1).gt.1) then  ! CPU time left for the old task in the previous timesl. - ccs(pr,it).gt.0 won't work if d=p
               
               call plcol0(1)                              ! Black text
               write(tmpStr,'(I0,A)') ccs(run(it-1),it), '>'
@@ -113,7 +113,7 @@ subroutine plot_scheduler(sched, np,time, name,ti,pi,di, ccs,run, fileBaseName)
      ! Mark a completed task:
      if(it.gt.1) then  ! Can't have a task switch in timeslise 0-1
         if(run(it).ne.run(it-1) .and. run(it-1).ne.0) then  ! There must be a task switch
-           if(ccs(run(it-1),it).le.0) then  ! No CPU time left for the old task
+           if(ccs(run(it-1),it-1).le.1) then  ! <=1 time unit left for old task in the prev. timesl. - ccs(pr,it).le.0 won't work if d=p
               call plssym(7.d0, fontSize)  ! Larger symbols
               call plpoin([dble(it-1)], [dble(run(it-1))], 17)
               call plssym(5.d0, fontSize)  ! Default symbol size
@@ -123,15 +123,15 @@ subroutine plot_scheduler(sched, np,time, name,ti,pi,di, ccs,run, fileBaseName)
      
   end do  ! it
   
-  call plwidth(1.d0*fontSize)                          ! Normal line width
+  call plwidth(1.d0*fontSize)                      ! Normal line width
   
   
   
   
   ! Print axis labels:
   call plcol0(1)                                   ! Black text
-  call plmtex('B', 3.5d0, 0.5d0,0.5d0, 'Time')     ! Plot label for horizontal axis
-  call plmtex('L', 3.5d0, 0.5d0,0.5d0, 'Task')  ! Plot label for vertical axis
+  call plmtex('B', 3.5d0, 0.5d0,0.5d0, 'time')     ! Plot label for horizontal axis
+  call plmtex('L', 3.5d0, 0.5d0,0.5d0, 'task')     ! Plot label for vertical axis
   
   
   ! Print the task names:
