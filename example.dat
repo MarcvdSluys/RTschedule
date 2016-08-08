@@ -2,8 +2,9 @@
 
 plotType    png                     # png, svg, pdf, or eps
 colour      .false.                 # .false.: B/W, .true.: colour
-sclType     1                       # 1: specify image width (pixels, e.g. 1000) @plSize,  2: specify box width (pixels, e.g. 25) @plSize - "resolution mode"
-plSize      1500                    # Image width if sclType=1, Box width if sclType=2 (pixels)
+scaleType   1                       # 1: specify image width (pixels, e.g. 1000) @scaleType,  2: specify box width (pixels, e.g. 25) @scaleType - "resolution mode"
+scaleType   1000                    # Image width if scaleType=1, Box width if scaleType=2 (pixels)
+fontSize    1.0                     # Relative size of text, symbols (and plot margins; default: 1.0)
 
 schedType   ALL                     # Scheduler type: RM, EDF, LLF or ALL
 time        30                      # Arbitrary units. 0: use major frame/hyperperiod

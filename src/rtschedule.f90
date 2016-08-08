@@ -20,10 +20,12 @@
 !***********************************************************************************************************************************
 !> \brief  Module to share plot settings
 module settings
+  use SUFR_kinds, only: double
   implicit none
   save
   
-  integer :: sclType, plSize, optTS, majFr
+  integer :: scaleType, plotSize, optTS, majFr
+  real(double) :: fontSize
   character :: schedType*(19), plotType*(19)
   logical :: colour
   
@@ -80,7 +82,7 @@ end program schedule
 subroutine read_input_file(nProcMax, name, ti,ci,di,pi, np,time, fileBaseName)
   use SUFR_system, only: find_free_io_unit, file_open_error_quit, file_read_error_quit, syntax_quit
   use SUFR_dummy, only: dumStr
-  use settings, only: schedType, plotType, sclType, plSize, colour
+  use settings, only: schedType, plotType, scaleType, plotSize, fontSize, colour
   
   implicit none
   integer, intent(in) :: nProcMax
@@ -106,8 +108,9 @@ subroutine read_input_file(nProcMax, name, ti,ci,di,pi, np,time, fileBaseName)
   write(*,*)
   read(ip,*) dumStr, plotType
   read(ip,*) dumStr, colour
-  read(ip,*) dumStr, sclType
-  read(ip,*) dumStr, plSize
+  read(ip,*) dumStr, scaleType
+  read(ip,*) dumStr, plotSize
+  read(ip,*) dumStr, fontSize
   
   ! Read file body - scheduler settings:
   read(ip,*) dumStr, schedType
