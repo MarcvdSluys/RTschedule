@@ -25,9 +25,9 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
   real(double), intent(in) :: load
   character, intent(in) :: sched*(9), name(np)*(9), fileBaseName*(99)
   integer, allocatable :: run(:), ccs(:,:)
-  integer :: it,pr, ri,ro, indx(np), prio(np),cc(np),tte(np), nSwitch,nMiss, Nopts
+  integer :: it,pr,pr1, ri,ro, indx(np), prio(np),cc(np),tte(np),ttd(np), nSwitch,nMiss, Nopts
   real(double) :: maxLoad
-  character :: ccpr*(9),priopr*(9),ttepr*(9)
+  character :: ccpr*(9),priopr*(9)
   
 
   write(*,'(/)')
@@ -38,9 +38,10 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
   
   
   cc=0; prio=0
-  ro=1; tte=0
+  ro=1; tte=0; ttd=0
   allocate(ccs(np,time), run(time));  ccs = 0
   nSwitch=0; nMiss=0
+  
   
   if(trim(sched).eq.'RM') then
      ! Determine RM priorities:
@@ -135,6 +136,7 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
      end if
   end do
   
+  
   do it=1,time  ! Note: this is the time unit that ENDS at t=ti
      
      ! Save cc for later use:
@@ -150,16 +152,22 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
      
      
      ! Report missed deadlines:
-     if( maxval(ccs(:, it), mod( ti+di-it + pi*1000, pi).eq.0).gt.1 ) then  ! The maximum Ci of tasks with Di=0 is >= 2
-        write(*,'(//,A,I0,A)', advance='no') '   ***   At t=',it,', a DEADLINE IS MISSED for process'
-        do pr=1,np
-           if( mod( ti(pr)+di(pr)-it + pi(pr)*1000, pi(pr)).eq.0 .and. ccs(pr,it).gt.1 ) then
-              write(*,'(A)', advance='no') ' '//trim(name(pr))
-              nMiss = nMiss + 1
-           end if
-        end do
-        write(*,'(A,//)') ', while process '//trim(name(ri))//' is running.   ***'
-     end if
+     do pr=1,np
+        ttd(pr) = mod( ti(pr) + di(pr) - it + pi(pr)*1000000, pi(pr))  ! Time to next deadline
+        
+        ! The task's deadline has just passed, and the task is running and has ci>1 or is not running and has ci>0:
+        if(ttd(pr).eq.0 .and. ( (pr.eq.ri.and.ccs(pr,it).gt.1) .or. (pr.ne.ri.and.ccs(pr,it).gt.0) ) ) then
+           write(*,'(//,A,I0,A)', advance='no') '   ***   At t=',it,', a DEADLINE IS MISSED for process'
+           do pr1=1,np
+              if( ttd(pr1).eq.0 .and. ccs(pr1,it).ge.1 ) then
+                 write(*,'(A)', advance='no') ' '//trim(name(pr1))
+                 nMiss = nMiss + 1
+              end if
+           end do
+           write(*,'(A,//)') ', while process '//trim(name(ri))//' is running.   ***'
+           exit
+        end if
+     end do
      
      
      ! Print timestamp:
@@ -170,7 +178,6 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
         
         write(ccpr,'(I0)') cc(pr)
         write(priopr,'(I0)') prio(pr)
-        write(ttepr,'(I0)') tte(pr)
         
         select case(trim(sched))
         case('RM')  ! Detailed RM data per process
@@ -214,14 +221,14 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
         
         
         ! Label new event:
-        if(it.ge.ti(pr) .and. tte(pr).eq.0) then  ! New event
+        if(it-1.ge.ti(pr) .and. tte(pr).eq.0) then  ! New event
            write(*,'(A)', advance='no') 'e'
         else
            write(*,'(A)', advance='no') ' '
         end if
         
         ! Label deadline:
-        if( mod( ti(pr)+di(pr)-it + pi(pr)*1000, pi(pr)).eq.0 ) then
+        if(it-1.ge.ti(pr) .and. ttd(pr).eq.0) then  ! New deadline
            write(*,'(A)', advance='no') 'd'
         else
            write(*,'(A)', advance='no') ' '
@@ -276,6 +283,7 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
      end if
      
      
+     
      ! Run the current task:
      select case(trim(sched))
      case('RM')
@@ -301,7 +309,7 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
      
      ! New event:
      do pr=1,np
-        tte(pr) = mod( ti(pr)+di(pr)-it + pi(pr)*1000000, pi(pr))  ! Time to next deadline
+        tte(pr) = mod( ti(pr) - it + pi(pr)*1000000, pi(pr))           ! Time to next event
         if(tte(pr).eq.0) then        ! New event occurs
            cc(pr) = ci(pr)           ! Reset the computation time 
            if(trim(sched).eq.'LLF') prio(pr) = di(pr) - ci(pr)  ! Reset the laxity for LLF
@@ -314,8 +322,8 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
   
   
   ! 'Plot' an ascii scheduler:
-  call plot_ascii_scheduler(sched, np,time, name,ti,pi,di, run, .false.)  ! Detail: .true./.false.
-  call plot_ascii_scheduler(sched, np,time, name,ti,pi,di, run, .true.)  ! Detail: .true./.false.
+  call plot_ascii_scheduler(sched, np,time, name,ti,pi,di, run, .false.)  ! Detail: .false.
+  call plot_ascii_scheduler(sched, np,time, name,ti,pi,di, run, .true.)   ! Detail: .true.
   
   
   ! Graphical plot:
