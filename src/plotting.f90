@@ -53,7 +53,7 @@ subroutine plot_scheduler(sched, np,time, name,ti,pi,di, ccs,run, fileBaseName)
   
   call plwidth(1.d0*fontSize)                       ! Normal line width
   call pllsty(1)                                  ! Full lines
-  call plschr(4.d0, fontSize)
+  call plschr(5.d0, fontSize)
   
   do it=1,time
      
@@ -165,8 +165,8 @@ subroutine pl_square_grid(nx,ny, xSize,ySize, xMarg1,xMarg2, yMarg1,yMarg2, font
   integer :: marg1,marg2, sumMargs, xPlBox
   real(plflt) :: rat
   
-  marg1 = 50  ! Left/bottom margin - needs space for plot labels
-  marg2 = 12  ! Right/top margin - needs space for large number labels sticking out
+  marg1 = 65  ! Left/bottom margin - needs space for plot labels. 65 reasonable for 1000px wide, plschr(5.d0)
+  marg2 = 15  ! Right/top margin - needs space for large number labels sticking out. 15 "
   sumMargs = nint( (marg1 + marg2) * fontSize )  ! All scaled margins
   
   select case(scaleType)
