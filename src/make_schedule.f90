@@ -321,15 +321,6 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
   end do  ! it
   
   
-  ! 'Plot' an ascii scheduler:
-  call plot_ascii_scheduler(sched, np,time, name,ti,pi,di, run,ccs, .false.)  ! Detail: .false.
-  call plot_ascii_scheduler(sched, np,time, name,ti,pi,di, run,ccs, .true.)   ! Detail: .true.
-  
-  
-  ! Graphical plot:
-  call plot_scheduler(sched, np,time, name,ti,pi,di, ccs,run, fileBaseName)
-  
-  
   ! Report on missed deadlines:
   select case(nMiss)
   case(0)
@@ -342,6 +333,16 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
   write(*,'(2x,I0,A)') nSwitch, ' task switches ('//d2s(dble(time)/dble(nSwitch+1),2)//' time units per run).'
   
   write(*,*)
+  
+  
+  ! 'Plot' an ascii scheduler:
+  call plot_ascii_scheduler(sched, np,time, name,ti,pi,di, run,ccs, .false.)  ! Detail: .false.
+  call plot_ascii_scheduler(sched, np,time, name,ti,pi,di, run,ccs, .true.)   ! Detail: .true.
+  
+  
+  ! Graphical plot:
+  call plot_scheduler(sched, np,time, name,ti,pi,di, ccs,run, fileBaseName)
+  
   
 end subroutine make_schedule
 !***********************************************************************************************************************************
@@ -408,6 +409,11 @@ subroutine plot_ascii_scheduler(sched, np,time, name,ti,pi,di, run,ccs, detail)
         write(*,'(I5)', advance='no') it*optTS
      end if
   end do
+  
+  if(optTS.gt.1) then
+     write(*,*)
+     write(*,'(2x,A,I0,A)') 'Each timeslice equals ', optTS, ' time units.'
+  end if
   write(*,*)
   
 end subroutine plot_ascii_scheduler

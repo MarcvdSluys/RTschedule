@@ -123,6 +123,11 @@ subroutine plot_scheduler(sched, np,time, name,ti,pi,di, ccs,run, fileBaseName)
               call plssym(5.d0, fontSize)     ! Default symbol size
            end if
         end if
+        if(it.eq.time .and. ccs(run(it),it).eq.1) then  ! End of the schedule, and the running task has 1 TS left
+           call plssym(7.d0, fontSize)     ! Larger symbols
+           call plpoin([dble(it)], [dble(pr)], 17)
+           call plssym(5.d0, fontSize)     ! Default symbol size
+        end if
      end if
      
   end do  ! it
