@@ -335,13 +335,13 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
   write(*,*)
   
   
-  ! 'Plot' an ascii scheduler:
-  call plot_ascii_scheduler(sched, np,time, name,ti,pi,di, run,ccs, .false.)  ! Detail: .false.
-  call plot_ascii_scheduler(sched, np,time, name,ti,pi,di, run,ccs, .true.)   ! Detail: .true.
+  ! 'Plot' an ascii schedule:
+  call plot_ascii_schedule(sched, np,time, name,ti,pi,di, run,ccs, .false.)  ! Detail: .false.
+  call plot_ascii_schedule(sched, np,time, name,ti,pi,di, run,ccs, .true.)   ! Detail: .true.
   
   
   ! Graphical plot:
-  call plot_scheduler(sched, np,time, name,ti,pi,di, ccs,run, fileBaseName)
+  call plot_schedule(sched, np,time, name,ti,pi,di, ccs,run, fileBaseName)
   
   
 end subroutine make_schedule
@@ -349,9 +349,9 @@ end subroutine make_schedule
 
 
 !***********************************************************************************************************************************
-!> \brief  'Plot' an ascii scheduler
+!> \brief  'Plot' an ascii schedule
 
-subroutine plot_ascii_scheduler(sched, np,time, name,ti,pi,di, run,ccs, detail)
+subroutine plot_ascii_schedule(sched, np,time, name,ti,pi,di, run,ccs, detail)
   use settings, only: optTS
   implicit none
   integer, intent(in) :: np,time, ti(np),pi(np),di(np), run(time), ccs(np,time)
@@ -416,7 +416,7 @@ subroutine plot_ascii_scheduler(sched, np,time, name,ti,pi,di, run,ccs, detail)
   end if
   write(*,*)
   
-end subroutine plot_ascii_scheduler
+end subroutine plot_ascii_schedule
 !***********************************************************************************************************************************
   
 

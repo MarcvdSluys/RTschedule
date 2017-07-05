@@ -14,9 +14,9 @@
 
 
 !***********************************************************************************************************************************
-!> \brief  Plot a graphical scheduler
+!> \brief  Plot a graphical schedule
 
-subroutine plot_scheduler(sched, np,time, name,ti,pi,di, ccs,run, fileBaseName)
+subroutine plot_schedule(sched, np,time, name,ti,pi,di, ccs,run, fileBaseName)
   use SUFR_kinds, only: double
   use SUFR_system, only: quit_program_error
   use plplot, only: plsdev, plsfnam, plbox, plmtex,plfill,plptex, plpoin
@@ -64,7 +64,7 @@ subroutine plot_scheduler(sched, np,time, name,ti,pi,di, ccs,run, fileBaseName)
      end if
      
      ! Print remaining cpu time:
-     if(it.gt.1) then                         ! Can't have a task switch in timeslise 0-1
+     if(it.gt.1) then                         ! Can't have a task switch in timeslice 0-1
         pr = run(it-1)                        ! Task running before the switch
         if(run(it).ne.pr .and. pr.ne.0) then  ! There was a task switch
            if(ccs(pr,it-1).gt.1) then         ! CPU time left for the old task in the previous timeslice
@@ -113,7 +113,7 @@ subroutine plot_scheduler(sched, np,time, name,ti,pi,di, ccs,run, fileBaseName)
      end do  ! pr
      
      ! Mark a completed task:
-     if(it.gt.1) then                         ! Can't have a task switch in timeslise 0-1
+     if(it.gt.1) then                         ! Can't have a task switch in timeslice 0-1
         pr = run(it-1)                        ! Task running before the switch
         if(run(it).ne.pr .and. pr.ne.0) then  ! There must be a task switch
            if(ccs(pr,it-1).le.1) then         ! Less than 1 time unit left for old task in the previous timeslice
@@ -152,7 +152,7 @@ subroutine plot_scheduler(sched, np,time, name,ti,pi,di, ccs,run, fileBaseName)
   
   write(*,'(/,A)') '  Graphical schedule saved as '//trim(plFileName)
   
-end subroutine plot_scheduler
+end subroutine plot_schedule
 !***********************************************************************************************************************************
 
 
