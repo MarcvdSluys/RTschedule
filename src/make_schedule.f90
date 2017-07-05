@@ -24,7 +24,7 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
   integer, intent(in) :: np,time, ti(np),ci(np),di(np),pi(np)
   real(double), intent(in) :: load
   character, intent(in) :: sched*(9), name(np)*(9), fileBaseName*(99)
-  integer, allocatable :: run(:), ccs(:,:)
+  integer :: ccs(np,time), run(time), prios(np,time)
   integer :: it,pr,pr1, ri,ro, indx(np), prio(np),cc(np),tte(np),ttd(np), nSwitch,nMiss, Nopts
   real(double) :: maxLoad
   character :: ccpr*(9),priopr*(9)
@@ -39,7 +39,7 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
   
   cc=0; prio=0
   ro=1; tte=0; ttd=0
-  allocate(ccs(np,time), run(time));  ccs = 0
+  ccs=0; prios=0
   nSwitch=0; nMiss=0
   
   
@@ -146,9 +146,10 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
      end if
      
      
-     ! Save the current computational times and running task for later use:
+     ! Save the current computational times, running tasks and priorities for later use:
      ccs(1:np,it) = cc(1:np)
      run(it) = ri
+     prios(1:np,it) = prio(1:np)  ! Needed for annotation in LLF
      
      
      ! Report missed deadlines:
@@ -341,7 +342,7 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
   
   
   ! Graphical plot:
-  call plot_schedule(sched, np,time, name,ti,pi,di, ccs,run, fileBaseName)
+  call plot_schedule(sched, np,time, name,ti,pi,di, ccs,run,prios, fileBaseName)
   
   
 end subroutine make_schedule

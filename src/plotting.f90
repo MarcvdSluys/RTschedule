@@ -16,14 +16,14 @@
 !***********************************************************************************************************************************
 !> \brief  Plot a graphical schedule
 
-subroutine plot_schedule(sched, np,time, name,ti,pi,di, ccs,run, fileBaseName)
+subroutine plot_schedule(sched, np,time, name,ti,pi,di, ccs,run,prios, fileBaseName)
   use SUFR_kinds, only: double
   use SUFR_system, only: quit_program_error
   use plplot, only: plsdev, plsfnam, plbox, plmtex,plfill,plptex, plpoin
   use settings, only: plotType, colour, optTS, fontSize
   
   implicit none
-  integer, intent(in) :: np,time, ti(np),pi(np),di(np), ccs(np,time),run(time)
+  integer, intent(in) :: np,time, ti(np),pi(np),di(np), ccs(np,time),run(time),prios(np,time)
   character, intent(in) :: sched*(9), name(np)*(9), fileBaseName*(99)
   integer :: it, pr, xSize,ySize
   real(double) :: xMarg1,xMarg2,yMarg1,yMarg2
@@ -108,6 +108,14 @@ subroutine plot_schedule(sched, np,time, name,ti,pi,di, ccs,run, fileBaseName)
               end if
            end if
            
+        end if
+
+        ! Print laxity in plot for LLF:
+        if(it.gt.0 .and. sched.eq.'LLF') then
+           write(tmpStr,'(I0)') prios(pr,it)
+           call plschr(3.5d0, fontSize)  ! Small font
+           call plptex(dble(it)-0.75d0, dble(pr-0.9d0), 1.d0,0.d0, 1.d0, trim(tmpStr))
+           call plschr(5.d0, fontSize)  ! Default font size
         end if
         
      end do  ! pr
