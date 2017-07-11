@@ -24,8 +24,8 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
   integer, intent(in) :: np,time, ti(np),ci(np),di(np),pi(np)
   real(double), intent(in) :: load
   character, intent(in) :: sched*(9), name(np)*(9), fileBaseName*(99)
-  integer :: ccs(np,time), run(time), prios(np,time)
-  integer :: it,pr,pr1, ri,ro, indx(np), prio(np),cc(np),tte(np),ttd(np), nSwitch,nMiss, Nopts
+  integer :: ccs(np,time), run(time), laxs(np,0:time)
+  integer :: it,pr,pr1, ri,ro, indx(np), prio(np),cc(np),tte(np),ttd(np),lax(np), nSwitch,nMiss, Nopts
   real(double) :: maxLoad
   character :: ccpr*(9),priopr*(9)
   
@@ -39,7 +39,7 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
   
   cc=0; prio=0
   ro=1; tte=0; ttd=0
-  ccs=0; prios=0
+  ccs=0; laxs=0
   nSwitch=0; nMiss=0
   
   
@@ -131,8 +131,10 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
         cc(pr) = ci(pr)
         ! The priority is given by the time to the next deadline in EDF:
         it = 0
+        lax(pr) = di(pr) - ci(pr)  ! Initial laxity
+        laxs(pr,0) = lax(pr)
         if(trim(sched).eq.'EDF') prio(pr) = mod( ti(pr)+di(pr)-it-1 + pi(pr)*1000000, pi(pr)) + 1  ! Time till deadline
-        if(trim(sched).eq.'LLF') prio(pr) = di(pr) - ci(pr)  ! The priority is given by the laxity in LLF
+        if(trim(sched).eq.'LLF') prio(pr) = lax(pr)  ! The priority is given by the laxity in LLF
      end if
   end do
   
@@ -149,7 +151,6 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
      ! Save the current computational times, running tasks and priorities for later use:
      ccs(1:np,it) = cc(1:np)
      run(it) = ri
-     prios(1:np,it) = prio(1:np)  ! Needed for annotation in LLF
      
      
      ! Report missed deadlines:
@@ -168,7 +169,8 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
            write(*,'(A,//)') ', while process '//trim(name(ri))//' is running.   ***'
            exit
         end if
-     end do
+        
+     end do  ! pr
      
      
      ! Print timestamp:
@@ -286,40 +288,44 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
      
      
      ! Run the current task:
+     do pr=1,np
+        if(pr.eq.ri) then
+           cc(pr) = cc(pr) - 1                       ! The running task's cc decreases
+        else
+           if(it.ge.ti(pr)) lax(pr) = lax(pr) - 1   ! All other tasks: laxity decreases
+        end if
+     end do
+     
      select case(trim(sched))
      case('RM')
-        if(ri.gt.0) cc(ri) = cc(ri) - 1                 ! The running task's cc decreases
         
      case('EDF')
-        if(ri.gt.0) cc(ri) = cc(ri) - 1                 ! The running task's cc decreases
         prio = mod( ti+di-it-1 + pi*1000000, pi) + 1    ! Update all priorities
         
      case('LLF')
-        do pr=1,np
-           if(pr.eq.ri) then
-              cc(pr) = cc(pr) - 1                       ! The running task's cc decreases
-           else
-              if(it.ge.ti(pr)) prio(pr) = prio(pr) - 1  ! All other tasks: laxity decreases
-           end if
-        end do
+        prio(1:np) = lax(1:np)                          ! Priority ~ laxity for LLF
         
      case default
         call quit_program_error('make_schedule():  unknown scheduler: '//trim(sched), 1)
      end select
      
      
+     
      ! New event:
      do pr=1,np
         tte(pr) = mod( ti(pr) - it + pi(pr)*1000000, pi(pr))           ! Time to next event
-        if(tte(pr).eq.0) then        ! New event occurs
-           cc(pr) = ci(pr)           ! Reset the computation time 
-           if(trim(sched).eq.'LLF') prio(pr) = di(pr) - ci(pr)  ! Reset the laxity for LLF
+        if(tte(pr).eq.0) then         ! New event occurs
+           cc(pr) = ci(pr)            ! Reset the computation time
+           lax(pr) = di(pr) - ci(pr)  ! Reset the laxity
+           if(trim(sched).eq.'LLF') prio(pr) = lax(pr)  ! Priority ~ laxity for LLF
         end if
      end do
+
+     laxs(1:np,it) = lax(1:np)  ! Needed for annotation in LLF
      
      ro = ri
      write(*,*)
-  end do  ! it
+  end do  ! it=1,time
   
   
   ! Report on missed deadlines:
@@ -342,7 +348,7 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
   
   
   ! Graphical plot:
-  call plot_schedule(sched, np,time, name,ti,pi,di, ccs,run,prios, fileBaseName)
+  call plot_schedule(sched, np,time, name,ti,pi,di, ccs,run,laxs, fileBaseName)
   
   
 end subroutine make_schedule
