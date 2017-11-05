@@ -1,4 +1,4 @@
-# RT Schedule: a real-time schedule generator for educational purposes#
+# RT Schedule: a CLI real-time schedule generator for educational purposes #
 
 RT Schedule is a realtime-schedule generator to create and present simple and idealised RT schedules from task lists.  The purpose is to compute the basic properties of a task set and create a schedule using the rate monotonic (RM), earliest deadline first (EDF) and least laxity first (LLF) algorithms.  The program uses simple, idealised systems, since students must be able to schedule them manually.  RT Schedule computes the data and generates clear graphs for lecture notes and exams.
 
