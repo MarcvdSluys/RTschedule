@@ -1,4 +1,4 @@
-!  Copyright (c) 2016  Marc van der Sluys - han.vandersluys.nl
+!  Copyright (c) 2016-2017  Marc van der Sluys - han.vandersluys.nl
 !   
 !  This file is part of the RT Schedule package, 
 !  see: http://rtschedule.sourceforge.net/
@@ -20,6 +20,7 @@ subroutine plot_schedule(sched, np,time, name,ti,pi,di, ccs,run,laxs, fileBaseNa
   use SUFR_kinds, only: double
   use SUFR_system, only: quit_program_error
   use plplot, only: plsdev, plsfnam, plbox, plmtex,plfill,plptex, plpoin
+  use plplot, only: plspage,plinit,plbop,plvpor,plwind,plwidth,pllsty,plschr,plcol0,plssym,plend
   use settings, only: plotType, colour, optTS, fontSize
   
   implicit none
@@ -49,9 +50,9 @@ subroutine plot_schedule(sched, np,time, name,ti,pi,di, ccs,run,laxs, fileBaseNa
   call plinit()                                   ! Initialise environment; Call after plsdev(), plssub(), plspage()
   call plbop()                                    ! Begin a new page
   call plvpor(xMarg1,xMarg2, yMarg1,yMarg2)       ! Set view port in plot window
-  call plwind(0,dble(time), dble(np),0)           ! Set view port in world coordinates
+  call plwind(0.d0,dble(time), dble(np),0.d0)     ! Set view port in world coordinates
   
-  call plwidth(1.d0*fontSize)                       ! Normal line width
+  call plwidth(1.d0*fontSize)                     ! Normal line width
   call pllsty(1)                                  ! Full lines
   call plschr(5.d0, fontSize)
   
@@ -82,9 +83,9 @@ subroutine plot_schedule(sched, np,time, name,ti,pi,di, ccs,run,laxs, fileBaseNa
   
   
   call plcol0(1)                              ! Black box
-  if(optTS.ne.1) call plwind(0,dble(time*optTS), dble(np),0)           ! Set view port in world coordinates
-  call plbox('BCGHNT', 5.d0*optTS, 5,  'BCG', 1.d0, 0)  ! Plot box
-  if(optTS.ne.1) call plwind(0,dble(time), dble(np),0)           ! Set view port in world coordinates
+  if(optTS.ne.1) call plwind(0.d0,dble(time*optTS), dble(np),0.d0)  ! Set view port in world coordinates
+  call plbox('BCGHNT', 5.d0*optTS, 5,  'BCG', 1.d0, 0)              ! Plot box
+  if(optTS.ne.1) call plwind(0.d0,dble(time), dble(np),0.d0)        ! Set view port in world coordinates
   
   
   if(colour) call plcol0(2)                        ! Red arrows, dots and crosses
@@ -223,6 +224,7 @@ end subroutine pl_square_grid
 !> \brief  Create a white background and define my colours in PLplot
 
 subroutine plmycolours()
+  use PLplot, only: plscol0
   implicit none
   
   call plscol0(0,  255,255,255)  ! Default BG, white
@@ -249,7 +251,7 @@ end subroutine plmycolours
 !***********************************************************************************************************************************
 subroutine plarrow(Narr, Xarr,Yarr, arrowLen, angle)
   use SUFR_constants, only: d2r !,r2d
-  use plplot, only: plflt, plline, plfill
+  use plplot, only: plflt, plline, plfill, plpsty
   
   implicit none
   integer, intent(in) :: Narr
