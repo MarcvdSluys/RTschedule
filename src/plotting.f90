@@ -112,11 +112,11 @@ subroutine plot_schedule(sched, np,time, name,ti,pi,di, ccs,run,laxs, fileBaseNa
         end if
 
         ! Print laxity in plot for LLF:
-        call plschr(3.5d0, fontSize)  ! Small font
+        call plschr(3.d0, fontSize)  ! Small font
         if(sched.eq.'LLF') then
            write(tmpStr,'(I0)') laxs(pr,it)
            if(ccs(pr,it+1).eq.0) tmpStr = '-'  ! Job is done
-           call plptex(dble(it)+0.25d0, dble(pr-0.9d0), 1.d0,0.d0, 1.d0, trim(tmpStr))
+           call plptex(dble(it)+0.25d0, dble(pr-0.85d0), 1.d0,0.d0, 1.d0, trim(tmpStr))
         end if
 
         ! Print current CPU time:
