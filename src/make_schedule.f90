@@ -121,7 +121,7 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
      write(*,'(/)')
      
   case default
-     call quit_program_error('make_schedule():  unknown scheduler: '//trim(sched), 1)
+     call quit_program_error('make_schedule():  unknown scheduler: '//trim(sched)//'.  Available schedulers: RMS, EDF, LST.', 1)
   end select
   
   
@@ -219,7 +219,7 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
            write(*,'(1x,A3)', advance='no') ccpr
            
         case default
-           call quit_program_error('make_schedule():  unknown scheduler: '//trim(sched), 1)
+           call quit_program_error('make_schedule():  unknown scheduler: '//trim(sched)//'.  Available schedulers: RMS, EDF, LST.', 1)
         end select
         
         
@@ -256,7 +256,7 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
         end if
         
      case default
-        call quit_program_error('make_schedule():  unknown scheduler: '//trim(sched), 1)
+        call quit_program_error('make_schedule():  unknown scheduler: '//trim(sched)//'.  Available schedulers: RMS, EDF, LST.', 1)
      end select
      
      
@@ -306,7 +306,7 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
         prio(1:np) = lax(1:np)                          ! Priority ~ laxity for LST/LLF
         
      case default
-        call quit_program_error('make_schedule():  unknown scheduler: '//trim(sched), 1)
+        call quit_program_error('make_schedule():  unknown scheduler: '//trim(sched)//'.  Available schedulers: RMS, EDF, LST.', 1)
      end select
      
      
