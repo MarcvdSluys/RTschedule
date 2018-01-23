@@ -43,7 +43,7 @@ program schedule
   integer, parameter :: nProcMax=19  ! Maximum number of processes to expect
   integer :: np, time, ti(nProcMax),ci(nProcMax),di(nProcMax),pi(nProcMax), iSch, optTS0
   real(double) :: load
-  character :: scheds(3)*(9), name(nProcMax)*(9), fileBaseName*(99)
+  character :: scheds(4)*(9), name(nProcMax)*(9), fileBaseName*(99)
   
   ! Initialise libSUFR:
   call set_SUFR_constants()
@@ -63,9 +63,9 @@ program schedule
   end if
   
   
-  scheds = [character(len=9) :: 'RM', 'EDF', 'LLF']
+  scheds = [character(len=9) :: 'RM', 'EDF', 'LST', 'LLF']
   
-  if(trim(schedType).eq.'ALL') then  ! Create all schedules:
+  if(trim(schedType).eq.'ALL') then  ! Create all schedules (but not LST+LLF):
      do iSch=1,3
         call make_schedule(scheds(iSch), np,time, name, ti,ci,di,pi, load, fileBaseName)
      end do
@@ -93,7 +93,7 @@ subroutine read_input_file(nProcMax, name, ti,ci,di,pi, np,time, fileBaseName)
   
   ! See whether a file name was passed on the command line:
   if(command_argument_count().ne.1) call syntax_quit('<input file name>', 0, 'Simple realtime-scheduling tool for RM, EDF and '// &
-       'LLF  -  rtschedule.sf.net')
+       'LST/LLF  -  rtschedule.sf.net')
   call get_command_argument(1, inFile)
   
   ! Open the input file:

@@ -106,7 +106,7 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
      end do
      write(*,'(/)')
      
-  case('LLF')
+  case('LST','LLF')
      write(*,'(A11,3x)', advance='no') 'Timeslice'
      do pr=1,np
         write(*,'(A15)', advance='no') name(pr)
@@ -134,7 +134,7 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
         lax(pr) = di(pr) - ci(pr)  ! Initial laxity
         laxs(pr,0) = lax(pr)
         if(trim(sched).eq.'EDF') prio(pr) = mod( ti(pr)+di(pr)-it-1 + pi(pr)*1000000, pi(pr)) + 1  ! Time till deadline
-        if(trim(sched).eq.'LLF') prio(pr) = lax(pr)  ! The priority is given by the laxity in LLF
+        if(trim(sched).eq.'LST'.or.trim(sched).eq.'LLF') prio(pr) = lax(pr)  ! The priority is given by the laxity in LST/LLF
      end if
   end do
   
@@ -203,7 +203,7 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
            write(*,'(5x,A4)', advance='no') ccpr
            write(*,'(A3,1x)', advance='no') trim(priopr)
            
-        case('LLF')  ! Detailed LLF data per process
+        case('LST','LLF')  ! Detailed LST/LLF data per process
            if(cc(pr).eq.0) then
               priopr = '-'
               ccpr = '-'
@@ -248,7 +248,7 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
            write(*,'(2x,A9)', advance='no') trim(name(ri))  ! Running task
         end if
         
-     case('LLF')  ! Print which task is running + its laxity:
+     case('LST','LLF')  ! Print which task is running + its laxity:
         if(ri.eq.0) then  ! No task is running
            write(*,'(3x,A8,A4)', advance='no') '-','-'
         else
@@ -273,8 +273,8 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
         end if
      end if
      
-     ! Choice in LLF:
-     if(trim(sched).eq.'LLF') then
+     ! Choice in LST/LLF:
+     if(trim(sched).eq.'LST'.or.trim(sched).eq.'LLF') then
         Nopts = count(prio(1:np).eq.minval(prio(1:np), cc(1:np).gt.0) .and. cc(1:np).gt.0)  ! # tasks with Ci>0 and lowest laxity
         if(Nopts.gt.1) then   ! Have a choice
            if(ri.eq.ro) then  ! No choice - keep current task running
@@ -302,8 +302,8 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
      case('EDF')
         prio = mod( ti+di-it-1 + pi*1000000, pi) + 1    ! Update all priorities
         
-     case('LLF')
-        prio(1:np) = lax(1:np)                          ! Priority ~ laxity for LLF
+     case('LST','LLF')
+        prio(1:np) = lax(1:np)                          ! Priority ~ laxity for LST/LLF
         
      case default
         call quit_program_error('make_schedule():  unknown scheduler: '//trim(sched), 1)
@@ -317,11 +317,11 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
         if(tte(pr).eq.0) then         ! New event occurs
            cc(pr) = ci(pr)            ! Reset the computation time
            lax(pr) = di(pr) - ci(pr)  ! Reset the laxity
-           if(trim(sched).eq.'LLF') prio(pr) = lax(pr)  ! Priority ~ laxity for LLF
+           if(trim(sched).eq.'LST'.or.trim(sched).eq.'LLF') prio(pr) = lax(pr)  ! Priority ~ laxity for LST/LLF
         end if
      end do
 
-     laxs(1:np,it) = lax(1:np)  ! Needed for annotation in LLF
+     laxs(1:np,it) = lax(1:np)  ! Needed for annotation in LST/LLF
      
      ro = ri
      write(*,*)
