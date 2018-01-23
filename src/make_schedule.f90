@@ -43,30 +43,30 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
   nSwitch=0; nMiss=0
   
   
-  if(trim(sched).eq.'RM') then
-     ! Determine RM priorities:
+  if(trim(sched).eq.'RMS') then
+     ! Determine RMS priorities:
      call sorted_index_list(dble(pi), indx)
      
      do pr=1,np
         prio(indx(pr)) = pr
      end do
      
-     ! Print task list with RM priorities:
-     write(*,'(2x,A)') 'RM priorities:'
+     ! Print task list with RMS priorities:
+     write(*,'(2x,A)') 'RMS priorities:'
      write(*,'(2x,9A5)') 'Name', 'ti','ci','di','pi','prio'
      do pr=1,np
         write(*,'(2x,A5, 9I5)') trim(name(pr)), ti(pr),ci(pr),di(pr),pi(pr), prio(pr)
      end do
      write(*,*)
      
-     ! RM schedulability test:
+     ! RMS schedulability test:
      maxLoad = np * (2.d0**(1.d0/dble(np)) - 1.d0)
-     write(*,'(A,I0,A)') '  RM schedulability test for n=',np,':  SUM Ci/Pi <= n (2^(1/n) - 1):'
+     write(*,'(A,I0,A)') '  RMS schedulability test for n=',np,':  SUM Ci/Pi <= n (2^(1/n) - 1):'
      write(*,'(A)', advance='no') '    '//d2s(load,3)//' <= '//d2s(maxLoad,3)
      if(load.le.maxLoad) then
-        write(*,'(A)') ', so task set is GUARANTEED to be schedulable with RM.'
+        write(*,'(A)') ', so task set is GUARANTEED to be schedulable with RMS.'
      else if(load.le.1.d0) then
-        write(*,'(A)') ', so task set is NOT guaranteed to be schedulable with RM.'
+        write(*,'(A)') ', so task set is NOT guaranteed to be schedulable with RMS.'
      else
         write(*,'(A)') ', so task set is NOT SCHEDULABLE indefinately.'
      end if
@@ -78,7 +78,7 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
   
   ! Write header lines:
   select case(trim(sched))
-  case('RM')
+  case('RMS')
      write(*,'(A11,3x)', advance='no') 'Timeslice'
      do pr=1,np
         write(*,'(A12)', advance='no') name(pr)
@@ -183,7 +183,7 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
         write(priopr,'(I0)') prio(pr)
         
         select case(trim(sched))
-        case('RM')  ! Detailed RM data per process
+        case('RMS')  ! Detailed RMS data per process
            if(pr.eq.ri) then
               ccpr = '_'//trim(ccpr)//'_'
            else
@@ -241,7 +241,7 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
      
      
      select case(trim(sched))
-     case('RM','EDF')  ! Print currently running task:
+     case('RMS','EDF')  ! Print currently running task:
         if(ri.eq.0) then
            write(*,'(2x,A9)', advance='no') '-'  ! No task is running
         else
@@ -297,7 +297,7 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
      end do
      
      select case(trim(sched))
-     case('RM')
+     case('RMS')
         
      case('EDF')
         prio = mod( ti+di-it-1 + pi*1000000, pi) + 1    ! Update all priorities

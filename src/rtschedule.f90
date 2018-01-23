@@ -63,7 +63,7 @@ program schedule
   end if
   
   
-  scheds = [character(len=9) :: 'RM', 'EDF', 'LST', 'LLF']
+  scheds = [character(len=9) :: 'RMS', 'EDF', 'LST', 'LLF']
   
   if(trim(schedType).eq.'ALL') then  ! Create all schedules (but not LST+LLF):
      do iSch=1,3
@@ -92,7 +92,7 @@ subroutine read_input_file(nProcMax, name, ti,ci,di,pi, np,time, fileBaseName)
   character :: inFile*(99)
   
   ! See whether a file name was passed on the command line:
-  if(command_argument_count().ne.1) call syntax_quit('<input file name>', 0, 'Simple realtime-scheduling tool for RM, EDF and '// &
+  if(command_argument_count().ne.1) call syntax_quit('<input file name>', 0, 'Simple realtime-scheduling tool for RMS, EDF and '// &
        'LST/LLF  -  rtschedule.sf.net')
   call get_command_argument(1, inFile)
   
