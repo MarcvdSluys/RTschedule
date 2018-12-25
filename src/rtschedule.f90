@@ -137,7 +137,7 @@ subroutine read_input_file(nProcMax, name, ti,ci,di,pi, np,time, fileBaseName)
   do ln=1,nProcMax
      read(ip,*,iostat=status) name(ln), ti(ln),ci(ln),di(ln),pi(ln)
      if(status.lt.0) exit
-     if(status.gt.0) call file_read_error_quit(trim(inFile), 12+ln, 0, message='expected row with task properties')
+     if(status.gt.0) call file_read_error_quit(trim(inFile), 12+ln, 0, ioMsg='expected row with task properties')
   end do  ! ln
   
   ! Close the file:

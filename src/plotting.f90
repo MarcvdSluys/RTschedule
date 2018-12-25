@@ -24,7 +24,7 @@ subroutine plot_schedule(sched, np,time, name,ti,pi,di, ccs,run,laxs, fileBaseNa
   use settings, only: plotType, colour, optTS, fontSize
   
   implicit none
-  integer, intent(in) :: np,time, ti(np),pi(np),di(np), ccs(np,time),run(time),laxs(np,0:time)
+  integer, intent(in) :: np,time, ti(np),pi(np),di(np), ccs(np,-1:time),run(-1:time),laxs(np,0:time)
   character, intent(in) :: sched*(9), name(np)*(9), fileBaseName*(99)
   integer :: it, pr, xSize,ySize
   real(double) :: xMarg1,xMarg2,yMarg1,yMarg2

@@ -19,7 +19,7 @@
 subroutine plot_scheduler(sched, np,time, name,ti,pi,di, ccs,run, fileBaseName)
   
   implicit none
-  integer, intent(in) :: np,time, ti(np),pi(np),di(np), ccs(np,time),run(time)
+  integer, intent(in) :: np,time, ti(np),pi(np),di(np), ccs(np,-1:time),run(-1:time)
   character, intent(in) :: sched*(9), name(np)*(9), fileBaseName*(99)
   integer :: tmpInt
   character :: tmpStr*(99)

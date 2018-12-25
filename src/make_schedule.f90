@@ -24,7 +24,7 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
   integer, intent(in) :: np,time, ti(np),ci(np),di(np),pi(np)
   real(double), intent(in) :: load
   character, intent(in) :: sched*(9), name(np)*(9), fileBaseName*(99)
-  integer :: ccs(np,time), run(time), laxs(np,0:time)
+  integer :: ccs(np,-1:time), run(-1:time), laxs(np,0:time)
   integer :: it,pr,pr1, ri,ro, indx(np), prio(np),cc(np),tte(np),ttd(np),lax(np), nSwitch,nMiss, Nopts
   real(double) :: maxLoad
   character :: ccpr*(9),priopr*(9)
@@ -361,7 +361,7 @@ end subroutine make_schedule
 subroutine plot_ascii_schedule(sched, np,time, name,ti,pi,di, run,ccs, detail)
   use settings, only: optTS
   implicit none
-  integer, intent(in) :: np,time, ti(np),pi(np),di(np), run(time), ccs(np,time)
+  integer, intent(in) :: np,time, ti(np),pi(np),di(np), run(-1:time), ccs(np,-1:time)
   character, intent(in) :: sched*(9), name(np)*(9)
   logical, intent(in) :: detail
   integer :: it, pr
