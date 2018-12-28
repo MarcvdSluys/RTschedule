@@ -164,8 +164,8 @@ subroutine plot_schedule(sched, np,time, name,ti,pi,di, ccs,run,laxs, fileBaseNa
   end do
   
   call plend()                                ! Finish plot
-  
-  write(*,'(/,A)') '  Graphical schedule saved as '//trim(plFileName)
+
+  write(*,'(A)') '  Graphical schedule saved as '//trim(plFileName)
   
 end subroutine plot_schedule
 !***********************************************************************************************************************************

@@ -24,7 +24,7 @@ module settings
   implicit none
   save
   
-  integer :: scaleType, plotSize, optTS, majFr
+  integer :: scaleType, plotSize, optTS, majFr, printTable,asciiSchedule,plotSchedule
   real(double) :: fontSize
   character :: schedType*(19), plotType*(19)
   logical :: colour
@@ -82,7 +82,7 @@ end program schedule
 subroutine read_input_file(nProcMax, name, ti,ci,di,pi, np,time, fileBaseName)
   use SUFR_system, only: find_free_io_unit, file_open_error_quit, file_read_error_quit, syntax_quit, file_read_end_error
   use SUFR_dummy, only: dumStr
-  use settings, only: schedType, plotType, scaleType, plotSize, fontSize, colour
+  use settings, only: schedType, plotType, scaleType, plotSize, fontSize, colour, printTable,asciiSchedule,plotSchedule
   
   implicit none
   integer, intent(in) :: nProcMax
@@ -129,6 +129,16 @@ subroutine read_input_file(nProcMax, name, ti,ci,di,pi, np,time, fileBaseName)
   read(ip,*,iostat=status) dumStr, time
   if(status.ne.0) call file_read_end_error(trim(inFile), 10, status, 1, 1, message='expected variable: time')
   
+  
+  ! Read file body - output settings:
+  read(ip,*,iostat=status) dumStr, printTable
+  if(status.ne.0) call file_read_end_error(trim(inFile), 9, status, 1, 1, message='expected variable: printTable')
+  read(ip,*,iostat=status) dumStr, asciiSchedule
+  if(status.ne.0) call file_read_end_error(trim(inFile), 10, status, 1, 1, message='expected variable: asciiSchedule')
+  read(ip,*,iostat=status) dumStr, plotSchedule
+  if(status.ne.0) call file_read_end_error(trim(inFile), 10, status, 1, 1, message='expected variable: plotSchedule')
+  
+  
   ! Read task-list header:
   read(ip,'(A)') dumStr
   read(ip,'(A)') dumStr
@@ -156,6 +166,8 @@ end subroutine read_input_file
 
 
 !***********************************************************************************************************************************
+!> \brief  Print some basic data about the system
+
 subroutine print_system_data(np,time, name,ti,ci,di,pi, load)
   use SUFR_kinds, only: double
   use SUFR_text, only: d2s
