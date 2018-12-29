@@ -1,13 +1,17 @@
 # example.dat: example input file for RT Schedule - Formatting is important! - rtschedule.sf.net
 
-plotType    png                     # png, svg, pdf, or eps
-colour      .false.                 # .false.: B/W, .true.: colour
-scaleType   1                       # 1: specify image width (pixels, e.g. 1000) @scaleType,  2: specify box width (pixels, e.g. 25) @scaleType - "resolution mode"
-scaleType   1000                    # Image width if scaleType=1, Box width if scaleType=2 (pixels)
-fontSize    1.0                     # Relative size of text, symbols (and plot margins; default: 1.0)
+plotType       png                  # png, svg, pdf, or eps
+colour         .false.              # .false.: B/W, .true.: colour
+scaleType      2                    # 1: specify image width (pixels, e.g. 1000) @plotSize,  2: specify box width (pixels, e.g. 25) @plotSize - "resolution mode"
+plotSize       50                   # Image width if scaleType=1, Box width if scaleType=2 (pixels)
+fontSize       1.7                  # Relative size of text, symbols (and plot margins; default: 1.0)
 
-schedType   ALL                     # Scheduler type: RM, EDF, LLF or ALL
-time        30                      # Arbitrary units. 0: use major frame/hyperperiod
+schedType      ALL                  # Scheduler type: RM, EDF, LST or ALL
+time           0                    # Arbitrary units. 0: use major frame/hyperperiod
+
+printTable     1                    # Print a table with scheduling data: 0-no, 1-missed deadlines, summary, 2-one line per timeslice
+asciiSchedule  1                    # Print an ascii schedule to screen: 0-no, 1-basic, 2-more detail (events, deadlines)
+plotSchedule   1                    # Generate a plot for the schedule: 0-no, 1-yes
 
 #task  t      c      d      p
 T1     0      1      5      5
