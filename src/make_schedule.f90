@@ -14,15 +14,15 @@
 
 
 !***********************************************************************************************************************************
-subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
+subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName, opTex)
   use SUFR_kinds, only: double
   use SUFR_sorting, only: sorted_index_list
   use SUFR_text, only: d2s
   use SUFR_system, only: quit_program_error
-  use settings, only: asciiSchedule, printTable, plotSchedule
+  use settings, only: asciiSchedule, printTable, plotSchedule,saveLaTeX
   
   implicit none
-  integer, intent(in) :: np,time, ti(np),ci(np),di(np),pi(np)
+  integer, intent(in) :: np,time, ti(np),ci(np),di(np),pi(np), opTex
   real(double), intent(in) :: load
   character, intent(in) :: sched*(9), name(np)*(9), fileBaseName*(99)
   integer :: ccs(np,-1:time), run(-1:time), laxs(np,0:time)
@@ -59,7 +59,7 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
         do pr=1,np
            write(*,'(2x,A5, 9I5)') trim(name(pr)), ti(pr),ci(pr),di(pr),pi(pr), prio(pr)
         end do
-        write(*,*)
+       write(*,*)
      end if
      
      ! RMS schedulability test:
@@ -354,11 +354,25 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
      case(0)
         write(*,'(A,I0,A)') '  No deadlines were missed: the system can be scheduled for ', time, ' time units.'
      case(1)
-        write(*,'(2x,I0,A,I0,A)') nMiss, ' ONE DEADLINE HAS BEEN MISSED in ', time, ' time units.'
+        write(*,'(2x,A,I0,A)') 'ONE DEADLINE HAS BEEN MISSED in ', time, ' time units.'
      case default
         write(*,'(2x,I0,A,I0,A)') nMiss, ' DEADLINES HAVE BEEN MISSED in ', time, ' time units.'
      end select
-     write(*,'(2x,I0,A)') nSwitch, ' task switches ('//d2s(dble(time)/dble(nSwitch+1),2)//' time units per run).'
+     write(*,'(2x,I0,A)') nSwitch, ' task switches occurred ('//d2s(dble(time)/dble(nSwitch+1),2)//' time units per run).'
+     
+     if(saveLaTeX.ge.1) then
+        write(opTex,'(A)') ''
+        write(opTex,'(A)') '\subsection{Results for the '//trim(sched)//' scheduler}'
+        select case(nMiss)
+        case(0)
+           write(opTex,'(A,I0,A)') '  No deadlines were missed; the system can be scheduled for ', time, ' time units.'
+        case(1)
+           write(opTex,'(2x,A,I0,A)') '\textbf{One deadline has been missed} in ', time, ' time units.'
+        case default
+           write(opTex,'(2x,A,I0,A,I0,A)') '\textbf{',nMiss, ' deadlines have been missed} in ', time, ' time units.'
+        end select
+        write(opTex,'(2x,I0,A)') nSwitch, ' task switches occurred (\emph{i.e.}\ '//d2s(dble(time)/dble(nSwitch+1),2)//' time units per run).'
+     end if
      
      if(printTable.ge.2) write(*,*)
   end if
@@ -371,7 +385,7 @@ subroutine make_schedule(sched, np,time, name, ti,ci,di,pi, load, fileBaseName)
   
   ! Graphical plot:
   if(printTable.ge.2) write(*,*)
-  if(plotSchedule.ge.1) call plot_schedule(sched, np,time, name,ti,pi,di, ccs,run,laxs, fileBaseName)
+  if(plotSchedule.ge.1) call plot_schedule(sched, np,time, name,ti,pi,di, ccs,run,laxs, fileBaseName,opTex)
   
   
 end subroutine make_schedule

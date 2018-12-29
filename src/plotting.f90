@@ -16,15 +16,15 @@
 !***********************************************************************************************************************************
 !> \brief  Plot a graphical schedule
 
-subroutine plot_schedule(sched, np,time, name,ti,pi,di, ccs,run,laxs, fileBaseName)
+subroutine plot_schedule(sched, np,time, name,ti,pi,di, ccs,run,laxs, fileBaseName,opTex)
   use SUFR_kinds, only: double
   use SUFR_system, only: quit_program_error
   use plplot, only: plsdev, plsfnam, plbox, plmtex,plfill,plptex, plpoin
   use plplot, only: plspage,plinit,plbop,plvpor,plwind,plwidth,pllsty,plschr,plcol0,plssym,plend
-  use settings, only: plotType, colour, optTS, fontSize
+  use settings, only: plotType, colour, optTS, fontSize, saveLaTeX
   
   implicit none
-  integer, intent(in) :: np,time, ti(np),pi(np),di(np), ccs(np,-1:time),run(-1:time),laxs(np,0:time)
+  integer, intent(in) :: np,time, ti(np),pi(np),di(np), ccs(np,-1:time),run(-1:time),laxs(np,0:time), opTex
   character, intent(in) :: sched*(9), name(np)*(9), fileBaseName*(99)
   integer :: it, pr, xSize,ySize
   real(double) :: xMarg1,xMarg2,yMarg1,yMarg2
@@ -166,6 +166,15 @@ subroutine plot_schedule(sched, np,time, name,ti,pi,di, ccs,run,laxs, fileBaseNa
   call plend()                                ! Finish plot
 
   write(*,'(A)') '  Graphical schedule saved as '//trim(plFileName)
+  if(saveLaTeX.ge.1) then
+     write(opTex,'(A)') ''
+     write(opTex,'(A)') '\begin{figure}[ht!]'
+     write(opTex,'(A)') '  \centering'
+     write(opTex,'(A)') '  \pgfimage[interpolate=true,width=0.9\textwidth]{'//trim(plFileName)//'}'
+     write(opTex,'(A)') '  \caption{Schedule for '//trim(sched)//'.}'
+     write(opTex,'(A)') '\end{figure}'
+     write(opTex,'(A)') ''
+  end if
   
 end subroutine plot_schedule
 !***********************************************************************************************************************************

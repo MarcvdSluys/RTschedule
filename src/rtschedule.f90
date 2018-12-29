@@ -67,10 +67,10 @@ program schedule
   
   if(trim(schedType).eq.'ALL') then  ! Create all schedules (but not LST+LLF):
      do iSch=1,3
-        call make_schedule(scheds(iSch), np,time, name, ti,ci,di,pi, load, fileBaseName)
+        call make_schedule(scheds(iSch), np,time, name, ti,ci,di,pi, load, fileBaseName,opTex)
      end do
   else  ! Create the specified schedule:
-     call make_schedule(schedType, np,time, name, ti,ci,di,pi, load, fileBaseName)
+     call make_schedule(schedType, np,time, name, ti,ci,di,pi, load, fileBaseName,opTex)
   end if
   
   write(*,*)
@@ -193,10 +193,13 @@ subroutine print_system_data(np,time, name,ti,ci,di,pi, load, fileBaseName, opTe
   write(*,*)
   
   if(saveLaTeX.ge.1) then
-     write(*,'(A)') 'Saving LaTeX output as '//trim(fileBaseName)//'.tex'
+     write(*,'(A)') '  Saving LaTeX output as '//trim(fileBaseName)//'.tex'
      call find_free_io_unit(opTex)
      open(opTex, file=trim(fileBaseName)//'.tex', status='replace', iostat=ioStat, ioMsg=ioMsg)
      if(ioStat.ne.0) call file_open_error_quit(trim(fileBaseName)//'.tex', 0, ioStat, trim(ioMsg))
+     write(opTex,'(A)') '\section{RTschedule results}'
+     write(opTex,'(A)') ''
+     write(opTex,'(A)') '\subsection{General info}'
      write(opTex,'(A)') '\begin{table}[ht!]'
      write(opTex,'(A)') '  \centering'
      write(opTex,'(A)') '  \caption{Task list for '//trim(fileBaseName)//'.}'
@@ -213,6 +216,7 @@ subroutine print_system_data(np,time, name,ti,ci,di,pi, load, fileBaseName, opTe
   if(saveLaTeX.ge.1) then
      write(opTex,'(A)') '  \end{tabular}'
      write(opTex,'(A)') '\end{table}'
+     write(opTex,'(A)') ''
   end if
   write(*,*)
   
@@ -228,18 +232,26 @@ subroutine print_system_data(np,time, name,ti,ci,di,pi, load, fileBaseName, opTe
   
   ! Print system load:
   write(*,'(/,A)', advance='no') '  System load: '
+  if(saveLaTeX.ge.1) write(opTex,'(/,A)', advance='no') 'The system load is '
   load = 0.d0
   do pr=1,np
      frac = dble(ci(pr))/dble(pi(pr))
      load = load + frac
      write(*,'(A)', advance='no') d2s(frac,4)
      if(pr.lt.np) write(*,'(A)', advance='no') ' + '
+     if(saveLaTeX.ge.1) then
+        write(opTex,'(A)', advance='no') d2s(frac,4)
+        if(pr.lt.np) write(opTex,'(A)', advance='no') ' + '
+     end if
   end do
   write(*,'(A)') ' = '//d2s(load,4)
+  if(saveLaTeX.ge.1) write(opTex,'(A)') ' = '//d2s(load,4)//'.'
   if(load.gt.1.d0) then
-     write(*,'(A)') '  The task list is NOT schedulable indefinately... :-('
+     write(*,'(A)') '  The task list can NOT be scheduled indefinately... :-('
+     if(saveLaTeX.ge.1) write(opTex,'(A)') 'Hence, the task list can \textbf{not} be scheduled indefinately.'
   else
-     write(*,'(A)') '  The task list is SCHEDULABLE in principle (feasible) :-)'
+     write(*,'(A)') '  The task list CAN BE SCHEDULED in principle (is feasible) :-)'
+     if(saveLaTeX.ge.1) write(opTex,'(A)') 'Hence, the task list can be scheduled in principle (\emph{i.e.}, it is feasible).'
   end if
   write(*,*)
   
@@ -248,6 +260,11 @@ subroutine print_system_data(np,time, name,ti,ci,di,pi, load, fileBaseName, opTe
   write(*,'(A,I0,A)') '  Optimal timeslice: ', optTS, ' time units'
   write(*,'(A,I0,A)') '  Major frame: ', majFr, ' time units'
   write(*,'(A,I0,A)') '  Minor frame: ', gcd(pi(1:np)), ' time units'
+  if(saveLaTeX.ge.1) then
+     write(opTex,'(A,I0,A)') 'The optimal timeslice is ', optTS, ' time units, '
+     write(opTex,'(A,I0,A)') 'the major frame ', majFr, ' time units and '
+     write(opTex,'(A,I0,A)') 'the minor frame ', gcd(pi(1:np)), ' time units.'
+  end if
   write(*,*)
   
 end subroutine print_system_data
