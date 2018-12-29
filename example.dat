@@ -12,6 +12,7 @@ time           0                    # Arbitrary units. 0: use major frame/hyperp
 printTable     1                    # Print a table with scheduling data: 0-no, 1-missed deadlines, summary, 2-one line per timeslice
 asciiSchedule  1                    # Print an ascii schedule to screen: 0-no, 1-basic, 2-more detail (events, deadlines)
 plotSchedule   1                    # Generate a plot for the schedule: 0-no, 1-yes
+saveLaTeX      1                    # Save the task list, main statistics and code to include Figures in a LaTeX file
 
 #task  t      c      d      p
 T1     0      1      5      5

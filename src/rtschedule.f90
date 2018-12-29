@@ -24,7 +24,7 @@ module settings
   implicit none
   save
   
-  integer :: scaleType, plotSize, optTS, majFr, printTable,asciiSchedule,plotSchedule
+  integer :: scaleType, plotSize, optTS, majFr, opTex, printTable,asciiSchedule,plotSchedule,saveLaTeX
   real(double) :: fontSize
   character :: schedType*(19), plotType*(19)
   logical :: colour
@@ -41,7 +41,7 @@ program schedule
   
   implicit none
   integer, parameter :: nProcMax=19  ! Maximum number of processes to expect
-  integer :: np, time, ti(nProcMax),ci(nProcMax),di(nProcMax),pi(nProcMax), iSch, optTS0
+  integer :: np, time, ti(nProcMax),ci(nProcMax),di(nProcMax),pi(nProcMax), iSch, optTS0, opTex
   real(double) :: load
   character :: scheds(4)*(9), name(nProcMax)*(9), fileBaseName*(99)
   
@@ -53,12 +53,12 @@ program schedule
   
   
   ! Print some basic data about the system:
-  call print_system_data(np,time, name,ti,ci,di,pi, load)
+  call print_system_data(np,time, name,ti,ci,di,pi, load, trim(fileBaseName), opTex)
   
   if(optTS.ne.1) then
      optTS0 = optTS
      call rescale_task_list(np,time, ti,ci,di,pi)
-     call print_system_data(np,time, name,ti,ci,di,pi, load)
+     call print_system_data(np,time, name,ti,ci,di,pi, load, trim(fileBaseName), opTex)
      optTS = optTS0
   end if
   
@@ -82,7 +82,7 @@ end program schedule
 subroutine read_input_file(nProcMax, name, ti,ci,di,pi, np,time, fileBaseName)
   use SUFR_system, only: find_free_io_unit, file_open_error_quit, file_read_error_quit, syntax_quit, file_read_end_error
   use SUFR_dummy, only: dumStr
-  use settings, only: schedType, plotType, scaleType, plotSize, fontSize, colour, printTable,asciiSchedule,plotSchedule
+  use settings, only: schedType, plotType, scaleType, plotSize, fontSize, colour, printTable,asciiSchedule,plotSchedule,saveLaTeX
   
   implicit none
   integer, intent(in) :: nProcMax
@@ -137,6 +137,8 @@ subroutine read_input_file(nProcMax, name, ti,ci,di,pi, np,time, fileBaseName)
   if(status.ne.0) call file_read_end_error(trim(inFile), 10, status, 1, 1, message='expected variable: asciiSchedule')
   read(ip,*,iostat=status) dumStr, plotSchedule
   if(status.ne.0) call file_read_end_error(trim(inFile), 10, status, 1, 1, message='expected variable: plotSchedule')
+  read(ip,*,iostat=status) dumStr, saveLaTeX
+  if(status.ne.0) call file_read_end_error(trim(inFile), 10, status, 1, 1, message='expected variable: saveLaTeX')
   
   
   ! Read task-list header:
@@ -168,30 +170,50 @@ end subroutine read_input_file
 !***********************************************************************************************************************************
 !> \brief  Print some basic data about the system
 
-subroutine print_system_data(np,time, name,ti,ci,di,pi, load)
+subroutine print_system_data(np,time, name,ti,ci,di,pi, load, fileBaseName, opTex)
   use SUFR_kinds, only: double
+  use SUFR_system, only: find_free_io_unit, file_open_error_quit
   use SUFR_text, only: d2s
   use SUFR_numerics, only: gcd,lcm
-  use settings, only: optTS, majFr
+  use settings, only: optTS, majFr, saveLaTeX
   
   implicit none
   integer, intent(in) :: np, ti(np),ci(np),di(np),pi(np)
-  integer, intent(inout) :: time
-  character, intent(in) :: name(np)*(9)
+  integer, intent(inout) :: time, opTex
+  character, intent(in) :: name(np)*(9), fileBaseName*(*)
   real(double), intent(out) :: load
-  integer :: pr
+  integer :: pr, ioStat
   real(double) :: frac
+  character :: ioMsg*(199)
   
   ! Print task list:
   write(*,'(A)') '  **************************************************************************************************************'
   write(*,'(A,T110,A)') '  ***   GENERAL TASK DATA', '***'
   write(*,'(A)') '  **************************************************************************************************************'
   write(*,*)
+  
+  if(saveLaTeX.ge.1) then
+     write(*,'(A)') 'Saving LaTeX output as '//trim(fileBaseName)//'.tex'
+     call find_free_io_unit(opTex)
+     open(opTex, file=trim(fileBaseName)//'.tex', status='replace', iostat=ioStat, ioMsg=ioMsg)
+     if(ioStat.ne.0) call file_open_error_quit(trim(fileBaseName)//'.tex', 0, ioStat, trim(ioMsg))
+     write(opTex,'(A)') '\begin{table}[ht!]'
+     write(opTex,'(A)') '  \centering'
+     write(opTex,'(A)') '  \caption{Task list for '//trim(fileBaseName)//'.}'
+     write(opTex,'(A)') '  \begin{tabular}{l|rrrr}'
+     write(opTex,'(4x,5(A5,A))') 'Task', '  & ', '$t_i$', '  & ','$c_i$', '  & ','$d_i$', '  & ','$p_i$', '  \\ \hline'
+  end if
+  write(*,*)
   write(*,'(2x,A)') 'Task list:'
   write(*,'(2x,9A5)') 'Name', 'ti','ci','di','pi'
   do pr=1,np
      write(*,'(2x,A5, 9I5)') trim(name(pr)), ti(pr),ci(pr),di(pr),pi(pr)
+     if(saveLaTeX.ge.1) write(opTex,'(4x,A5,A, 4(I5,A))') trim(name(pr)), '  & ', ti(pr),'  & ',ci(pr),'  & ',di(pr),'  & ',pi(pr),'  \\'
   end do
+  if(saveLaTeX.ge.1) then
+     write(opTex,'(A)') '  \end{tabular}'
+     write(opTex,'(A)') '\end{table}'
+  end if
   write(*,*)
   
   ! Print scheduling time:
