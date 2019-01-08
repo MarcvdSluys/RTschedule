@@ -42,7 +42,7 @@ program schedule
   
   implicit none
   integer, parameter :: nProcMax=19  ! Maximum number of processes to expect
-  integer :: np, time, ti(nProcMax),ci(nProcMax),di(nProcMax),pi(nProcMax), iSch, opTex, ioStat
+  integer :: nFiles,iFile, np, time, ti(nProcMax),ci(nProcMax),di(nProcMax),pi(nProcMax), iSch, opTex, ioStat
   real(double) :: load
   character :: inFile*(199), scheds(4)*(9), name(nProcMax)*(9), fileBaseName*(99), ioMsg*(199)
   
@@ -50,44 +50,49 @@ program schedule
   call set_SUFR_constants()
   
   ! See whether a file name was passed on the command line:
-  if(command_argument_count().ne.1) call syntax_quit('<input file name>', 0, 'Simple realtime-scheduling tool for RMS, EDF and '// &
+  nFiles = command_argument_count()
+  if(nFiles.lt.1) call syntax_quit('<input file name>', 0, 'Simple realtime-scheduling tool for RMS, EDF and '// &
        'LST/LLF  -  rtschedule.sf.net')
-  call get_command_argument(1, inFile)
   
-  ! Read the input file:
-  call read_input_file(trim(inFile), nProcMax, name, ti,ci,di,pi, np,time, fileBaseName)
+  do iFile=1,nFiles
+     call get_command_argument(iFile, inFile)
+     
+     ! Read the input file:
+     call read_input_file(trim(inFile), nProcMax, name, ti,ci,di,pi, np,time, fileBaseName)
+     
+     
+     if(saveLaTeX.ge.1) then  ! Open a .tex file to save LaTeX output
+        write(*,'(A)') '  Saving LaTeX output as '//trim(fileBaseName)//'.tex'
+        call find_free_io_unit(opTex)
+        open(opTex, file=trim(fileBaseName)//'.tex', status='replace', iostat=ioStat, ioMsg=ioMsg)
+        if(ioStat.ne.0) call file_open_error_quit(trim(fileBaseName)//'.tex', 0, ioStat, trim(ioMsg))
+     end if
+     
+     ! Print some basic data about the system:
+     call print_system_data(np,time, name,ti,ci,di,pi, load, trim(fileBaseName), opTex, 1)  ! Trial = 1
   
+     if(optTS.ne.1) then
+        optTS0 = optTS
+        call rescale_task_list(np,time, ti,ci,di,pi)
+        call print_system_data(np,time, name,ti,ci,di,pi, load, trim(fileBaseName), opTex, 2)  ! Trial = 2
+        optTS = optTS0
+     end if
   
-  if(saveLaTeX.ge.1) then  ! Open a .tex file to save LaTeX output
-     write(*,'(A)') '  Saving LaTeX output as '//trim(fileBaseName)//'.tex'
-     call find_free_io_unit(opTex)
-     open(opTex, file=trim(fileBaseName)//'.tex', status='replace', iostat=ioStat, ioMsg=ioMsg)
-     if(ioStat.ne.0) call file_open_error_quit(trim(fileBaseName)//'.tex', 0, ioStat, trim(ioMsg))
-  end if
+     
+     scheds = [character(len=9) :: 'RMS', 'EDF', 'LST', 'LLF']
+     
+     if(trim(schedType).eq.'ALL') then  ! Create all schedules (but not LST+LLF):
+        do iSch=1,3
+           call make_schedule(scheds(iSch), np,time, name, ti,ci,di,pi, load, fileBaseName,opTex)
+        end do
+     else  ! Create the specified schedule:
+        call make_schedule(schedType, np,time, name, ti,ci,di,pi, load, fileBaseName,opTex)
+     end if
+     
+     close(opTex)
+     write(*,*)
+  end do  ! iFile=1,nFiles
   
-  ! Print some basic data about the system:
-  call print_system_data(np,time, name,ti,ci,di,pi, load, trim(fileBaseName), opTex, 1)  ! Trial = 1
-  
-  if(optTS.ne.1) then
-     optTS0 = optTS
-     call rescale_task_list(np,time, ti,ci,di,pi)
-     call print_system_data(np,time, name,ti,ci,di,pi, load, trim(fileBaseName), opTex, 2)  ! Trial = 2
-     optTS = optTS0
-  end if
-  
-  
-  scheds = [character(len=9) :: 'RMS', 'EDF', 'LST', 'LLF']
-  
-  if(trim(schedType).eq.'ALL') then  ! Create all schedules (but not LST+LLF):
-     do iSch=1,3
-        call make_schedule(scheds(iSch), np,time, name, ti,ci,di,pi, load, fileBaseName,opTex)
-     end do
-  else  ! Create the specified schedule:
-     call make_schedule(schedType, np,time, name, ti,ci,di,pi, load, fileBaseName,opTex)
-  end if
-  
-  close(opTex)
-  write(*,*)
 end program schedule
 !***********************************************************************************************************************************
 
