@@ -1,4 +1,4 @@
-!  Copyright (c) 2016-2017  Marc van der Sluys - han.vandersluys.nl
+!  Copyright (c) 2016-2019  Marc van der Sluys - han.vandersluys.nl
 !   
 !  This file is part of the RT Schedule package, 
 !  see: http://rtschedule.sourceforge.net/
