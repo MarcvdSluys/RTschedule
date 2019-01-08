@@ -37,20 +37,25 @@ end module settings
 program schedule
   use SUFR_kinds, only: double
   use SUFR_constants, only: set_SUFR_constants
-  use SUFR_system, only: find_free_io_unit, file_open_error_quit
+  use SUFR_system, only: syntax_quit, find_free_io_unit, file_open_error_quit
   use settings, only: schedType, optTS, optTS0, saveLaTeX
   
   implicit none
   integer, parameter :: nProcMax=19  ! Maximum number of processes to expect
   integer :: np, time, ti(nProcMax),ci(nProcMax),di(nProcMax),pi(nProcMax), iSch, opTex, ioStat
   real(double) :: load
-  character :: scheds(4)*(9), name(nProcMax)*(9), fileBaseName*(99), ioMsg*(199)
+  character :: inFile*(199), scheds(4)*(9), name(nProcMax)*(9), fileBaseName*(99), ioMsg*(199)
   
   ! Initialise libSUFR:
   call set_SUFR_constants()
   
+  ! See whether a file name was passed on the command line:
+  if(command_argument_count().ne.1) call syntax_quit('<input file name>', 0, 'Simple realtime-scheduling tool for RMS, EDF and '// &
+       'LST/LLF  -  rtschedule.sf.net')
+  call get_command_argument(1, inFile)
+  
   ! Read the input file:
-  call read_input_file(nProcMax, name, ti,ci,di,pi, np,time, fileBaseName)
+  call read_input_file(trim(inFile), nProcMax, name, ti,ci,di,pi, np,time, fileBaseName)
   
   
   if(saveLaTeX.ge.1) then  ! Open a .tex file to save LaTeX output
@@ -88,22 +93,17 @@ end program schedule
 
 
 !***********************************************************************************************************************************
-subroutine read_input_file(nProcMax, name, ti,ci,di,pi, np,time, fileBaseName)
-  use SUFR_system, only: find_free_io_unit, file_open_error_quit, file_read_error_quit, syntax_quit, file_read_end_error
+subroutine read_input_file(inFile, nProcMax, name, ti,ci,di,pi, np,time, fileBaseName)
+  use SUFR_system, only: find_free_io_unit, file_open_error_quit, file_read_error_quit, file_read_end_error
   use SUFR_dummy, only: dumStr
   use settings, only: schedType, plotType, scaleType, plotSize, fontSize, colour, printTable,asciiSchedule,plotSchedule,saveLaTeX
   
   implicit none
+  character, intent(in) :: inFile*(*)
   integer, intent(in) :: nProcMax
   integer, intent(out) :: ti(nProcMax),ci(nProcMax),di(nProcMax),pi(nProcMax), np,time
   character, intent(out) :: name(nProcMax)*(9), fileBaseName*(99)
   integer :: ip,ln, status, lastDot
-  character :: inFile*(99)
-  
-  ! See whether a file name was passed on the command line:
-  if(command_argument_count().ne.1) call syntax_quit('<input file name>', 0, 'Simple realtime-scheduling tool for RMS, EDF and '// &
-       'LST/LLF  -  rtschedule.sf.net')
-  call get_command_argument(1, inFile)
   
   ! Open the input file:
   call find_free_io_unit(ip)
