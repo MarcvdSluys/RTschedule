@@ -1,6 +1,6 @@
 # RT Schedule: a CLI real-time schedule generator for educational purposes #
 
-RT Schedule is a realtime-schedule generator to create and present simple and idealised RT schedules from task lists.  The purpose is to compute the basic properties of a task set and create a schedule using the rate monotonic (RM), earliest deadline first (EDF) and least laxity first (LLF) algorithms.  The program uses simple, idealised systems, since students must be able to schedule them manually.  RT Schedule computes the data and generates clear graphs for lecture notes and exams.
+RT Schedule is a realtime-schedule generator to create and present simple and idealised RT schedules from task lists.  The purpose is to compute the basic properties of a task set and create a schedule using the rate monotonic scheduling (RMS), earliest deadline first (EDF) and least slack time (LST) / least laxity first (LLF) algorithms.  The program uses simple, idealised systems, since students must be able to schedule them manually.  RT Schedule computes the data and generates clear graphs for lecture notes and exams.  For that purpose, it can also generate LaTeX output.
 
 RTschedule can be used under the conditions of the GNU General Public Licence version 3 [(GPLv3)](https://opensource.org/licenses/GPL-3.0).  The program is written in Fortran, needs the [libSUFR](http://libsufr.sourceforge.net) package and uses [PLplot](http://plplot.sourceforge.net/) to generate graphics.  If PLplot is not installed at compile time, the code will be compiled without graphics support.  The default installer uses [CMake](https://cmake.org/).  See the [doc/INSTALL](doc/INSTALL) file for installation instructions.
 
@@ -34,17 +34,17 @@ RT Scheduler can be run from the command line, and requires an input file in ord
    
    
      **************************************************************************************************************
-     ***   RM SCHEDULER                                                                                         ***
+     ***   RMS SCHEDULER                                                                                         ***
      **************************************************************************************************************
    
-     RM priorities:
+     RMS priorities:
       Name   ti   ci   di   pi prio
         T1    0    1    5    5    1
         T2    0    2   10   10    2
         T3    0    5   15   15    3
    
-     RM schedulability test for n=3:  SUM Ci/Pi <= n (2^(1/n) - 1):
-       0.733 <= 0.780, so task set is GUARANTEED to be schedulable with RM.
+     RMS schedulability test for n=3:  SUM Ci/Pi <= n (2^(1/n) - 1):
+       0.733 <= 0.780, so task set is GUARANTEED to be schedulable with RMS.
    
      Timeslice      T1          T2          T3        Running  Notes
                   cpu  ev     cpu  ev     cpu  ev
@@ -80,19 +80,19 @@ RT Scheduler can be run from the command line, and requires an input file in ord
      28-29         0           0           0               -
      29-30         0    d      0    d      0    d          -
    
-     RM ASCII schedule:
+     RMS ASCII schedule:
      T1   #    #    #    #    #    #    
      T2    ##        ##        ##       
      T3      ## ###       ####   #      
       t  0    5   10   15   20   25   30
    
-     RM ASCII schedule:
+     RMS ASCII schedule:
      T1   #        e#        e#        e#        e#        e#        e
      T2     # #              e  # #              e  # #              e
      T3         # #   # # #            e  # # # #       #            e
       t  0         5        10        15        20        25        30
    
-     Graphical schedule saved as example_schedule_RM.png
+     Graphical schedule saved as example_schedule_RMS.png
    
      No deadlines were missed: the system can be scheduled for 30 time units.
      16 task switches (1.76 time units per run).
@@ -157,7 +157,7 @@ RT Scheduler can be run from the command line, and requires an input file in ord
    
    
      **************************************************************************************************************
-     ***   LLF SCHEDULER                                                                                        ***
+     ***   LST SCHEDULER                                                                                        ***
      **************************************************************************************************************
    
      Timeslice         T1             T2             T3        Running Lax  Notes
@@ -194,25 +194,25 @@ RT Scheduler can be run from the command line, and requires an input file in ord
      28-29         -   -          -   -          -   -              -   -
      29-30         -   -   d      -   -   d      -   -   d          -   -
    
-     LLF ASCII schedule:
+     LST ASCII schedule:
      T1   #    #    #    #    #    #    
      T2    ##        ##        ##       
      T3      ## ###       ####   #      
       t  0    5   10   15   20   25   30
    
-     LLF ASCII schedule:
+     LST ASCII schedule:
      T1   #        e#        e#        e#        e#        e#        e
      T2     # #              e  # #              e  # #              e
      T3         # #   # # #            e  # # # #       #            e
       t  0         5        10        15        20        25        30
    
-     Graphical schedule saved as example_schedule_LLF.png
+     Graphical schedule saved as example_schedule_LST.png
    
      No deadlines were missed: the system can be scheduled for 30 time units.
      16 task switches (1.76 time units per run).
      
      
      
-![Example RM schedule](example_schedule_RM.png)
+![Example RMS schedule](example_schedule_RMS.png)
 
 
