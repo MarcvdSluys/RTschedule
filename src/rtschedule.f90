@@ -202,6 +202,7 @@ subroutine print_system_data(np,time, name,ti,ci,di,pi, load, fileBaseName, opTe
   write(*,*)
   
   if(saveLaTeX.ge.1) then  ! Save LaTeX output
+     
      ! Replace '_' with '\_'.  Must be done in two steps, since replacement string contains match string
      lFileBaseName = fileBaseName
      call replace_substring(lFileBaseName, '_', '&')
@@ -225,6 +226,7 @@ subroutine print_system_data(np,time, name,ti,ci,di,pi, load, fileBaseName, opTe
         write(opTex,'(A)') '    \label{tab:'//trim(fileBaseName)//'_newTS}'
         write(opTex,'(A)') '  }'
      end if
+     write(opTex,'(A)') '  \vspace*{1em}'
      write(opTex,'(A)') '  \begin{tabular}{l|rrrr}'
      write(opTex,'(4x,5(A5,A))') 'Task', '  & ', '$t_i$', '  & ','$c_i$', '  & ','$d_i$', '  & ','$p_i$', '  \\ \hline'
   end if
@@ -256,7 +258,7 @@ subroutine print_system_data(np,time, name,ti,ci,di,pi, load, fileBaseName, opTe
   if(trial.eq.1) then
      write(*,'(/,A)', advance='no') '  System load: '
      if(saveLaTeX.ge.1) then
-        write(opTex,'(/,A)', advance='no') 'The system load is '
+        write(opTex,'(/,A)', advance='no') 'The system load for the task list in Table~\ref{tab:'//trim(fileBaseName)//'} is '
         if(trial.gt.1) write(opTex,'(A)', advance='no') 'still '
      end if
      load = 0.d0
