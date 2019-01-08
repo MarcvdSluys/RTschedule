@@ -24,7 +24,7 @@ module settings
   implicit none
   save
   
-  integer :: scaleType, plotSize, optTS, majFr, opTex, printTable,asciiSchedule,plotSchedule,saveLaTeX
+  integer :: scaleType, plotSize, optTS,optTS0, majFr, opTex, printTable,asciiSchedule,plotSchedule,saveLaTeX
   real(double) :: fontSize
   character :: schedType*(19), plotType*(19)
   logical :: colour
@@ -37,13 +37,14 @@ end module settings
 program schedule
   use SUFR_kinds, only: double
   use SUFR_constants, only: set_SUFR_constants
-  use settings, only: schedType, optTS
+  use SUFR_system, only: find_free_io_unit, file_open_error_quit
+  use settings, only: schedType, optTS, optTS0, saveLaTeX
   
   implicit none
   integer, parameter :: nProcMax=19  ! Maximum number of processes to expect
-  integer :: np, time, ti(nProcMax),ci(nProcMax),di(nProcMax),pi(nProcMax), iSch, optTS0, opTex
+  integer :: np, time, ti(nProcMax),ci(nProcMax),di(nProcMax),pi(nProcMax), iSch, opTex, ioStat
   real(double) :: load
-  character :: scheds(4)*(9), name(nProcMax)*(9), fileBaseName*(99)
+  character :: scheds(4)*(9), name(nProcMax)*(9), fileBaseName*(99), ioMsg*(199)
   
   ! Initialise libSUFR:
   call set_SUFR_constants()
@@ -52,13 +53,20 @@ program schedule
   call read_input_file(nProcMax, name, ti,ci,di,pi, np,time, fileBaseName)
   
   
+  if(saveLaTeX.ge.1) then  ! Open a .tex file to save LaTeX output
+     write(*,'(A)') '  Saving LaTeX output as '//trim(fileBaseName)//'.tex'
+     call find_free_io_unit(opTex)
+     open(opTex, file=trim(fileBaseName)//'.tex', status='replace', iostat=ioStat, ioMsg=ioMsg)
+     if(ioStat.ne.0) call file_open_error_quit(trim(fileBaseName)//'.tex', 0, ioStat, trim(ioMsg))
+  end if
+  
   ! Print some basic data about the system:
-  call print_system_data(np,time, name,ti,ci,di,pi, load, trim(fileBaseName), opTex)
+  call print_system_data(np,time, name,ti,ci,di,pi, load, trim(fileBaseName), opTex, 1)  ! Trial = 1
   
   if(optTS.ne.1) then
      optTS0 = optTS
      call rescale_task_list(np,time, ti,ci,di,pi)
-     call print_system_data(np,time, name,ti,ci,di,pi, load, trim(fileBaseName), opTex)
+     call print_system_data(np,time, name,ti,ci,di,pi, load, trim(fileBaseName), opTex, 2)  ! Trial = 2
      optTS = optTS0
   end if
   
@@ -73,6 +81,7 @@ program schedule
      call make_schedule(schedType, np,time, name, ti,ci,di,pi, load, fileBaseName,opTex)
   end if
   
+  close(opTex)
   write(*,*)
 end program schedule
 !***********************************************************************************************************************************
@@ -170,21 +179,19 @@ end subroutine read_input_file
 !***********************************************************************************************************************************
 !> \brief  Print some basic data about the system
 
-subroutine print_system_data(np,time, name,ti,ci,di,pi, load, fileBaseName, opTex)
+subroutine print_system_data(np,time, name,ti,ci,di,pi, load, fileBaseName, opTex, trial)
   use SUFR_kinds, only: double
-  use SUFR_system, only: find_free_io_unit, file_open_error_quit
   use SUFR_text, only: d2s
   use SUFR_numerics, only: gcd,lcm
-  use settings, only: optTS, majFr, saveLaTeX
+  use settings, only: optTS, majFr, saveLaTeX, optTS0
   
   implicit none
-  integer, intent(in) :: np, ti(np),ci(np),di(np),pi(np)
-  integer, intent(inout) :: time, opTex
+  integer, intent(in) :: np, ti(np),ci(np),di(np),pi(np), opTex, trial
+  integer, intent(inout) :: time
   character, intent(in) :: name(np)*(9), fileBaseName*(*)
   real(double), intent(out) :: load
-  integer :: pr, ioStat
+  integer :: pr
   real(double) :: frac
-  character :: ioMsg*(199)
   
   ! Print task list:
   write(*,'(A)') '  **************************************************************************************************************'
@@ -192,14 +199,12 @@ subroutine print_system_data(np,time, name,ti,ci,di,pi, load, fileBaseName, opTe
   write(*,'(A)') '  **************************************************************************************************************'
   write(*,*)
   
-  if(saveLaTeX.ge.1) then
-     write(*,'(A)') '  Saving LaTeX output as '//trim(fileBaseName)//'.tex'
-     call find_free_io_unit(opTex)
-     open(opTex, file=trim(fileBaseName)//'.tex', status='replace', iostat=ioStat, ioMsg=ioMsg)
-     if(ioStat.ne.0) call file_open_error_quit(trim(fileBaseName)//'.tex', 0, ioStat, trim(ioMsg))
-     write(opTex,'(A)') '\section{RTschedule results}'
-     write(opTex,'(A)') ''
-     write(opTex,'(A)') '\subsection{General info}'
+  if(saveLaTeX.ge.1) then  ! Save LaTeX output
+     if(trial.eq.1) then
+        write(opTex,'(A)') '\section{RTschedule results for '//trim(fileBaseName)//'}'
+        write(opTex,'(A)') ''
+        write(opTex,'(A)') '\subsection{General info}'
+     end if
      write(opTex,'(A)') '\begin{table}[ht!]'
      write(opTex,'(A)') '  \centering'
      write(opTex,'(A)') '  \caption{Task list for '//trim(fileBaseName)//'.}'
@@ -231,29 +236,34 @@ subroutine print_system_data(np,time, name,ti,ci,di,pi, load, fileBaseName, opTe
   
   
   ! Print system load:
-  write(*,'(/,A)', advance='no') '  System load: '
-  if(saveLaTeX.ge.1) write(opTex,'(/,A)', advance='no') 'The system load is '
-  load = 0.d0
-  do pr=1,np
-     frac = dble(ci(pr))/dble(pi(pr))
-     load = load + frac
-     write(*,'(A)', advance='no') d2s(frac,4)
-     if(pr.lt.np) write(*,'(A)', advance='no') ' + '
+  if(trial.eq.1) then
+     write(*,'(/,A)', advance='no') '  System load: '
      if(saveLaTeX.ge.1) then
-        write(opTex,'(A)', advance='no') d2s(frac,4)
-        if(pr.lt.np) write(opTex,'(A)', advance='no') ' + '
+        write(opTex,'(/,A)', advance='no') 'The system load is '
+        if(trial.gt.1) write(opTex,'(A)', advance='no') 'still '
      end if
-  end do
-  write(*,'(A)') ' = '//d2s(load,4)
-  if(saveLaTeX.ge.1) write(opTex,'(A)') ' = '//d2s(load,4)//'.'
-  if(load.gt.1.d0) then
-     write(*,'(A)') '  The task list can NOT be scheduled indefinately... :-('
-     if(saveLaTeX.ge.1) write(opTex,'(A)') 'Hence, the task list can \textbf{not} be scheduled indefinately.'
-  else
-     write(*,'(A)') '  The task list CAN BE SCHEDULED in principle (is feasible) :-)'
-     if(saveLaTeX.ge.1) write(opTex,'(A)') 'Hence, the task list can be scheduled in principle (\emph{i.e.}, it is feasible).'
+     load = 0.d0
+     do pr=1,np
+        frac = dble(ci(pr))/dble(pi(pr))
+        load = load + frac
+        write(*,'(A)', advance='no') d2s(frac,4)
+        if(pr.lt.np) write(*,'(A)', advance='no') ' + '
+        if(saveLaTeX.ge.1) then
+           write(opTex,'(A)', advance='no') d2s(frac,4)
+           if(pr.lt.np) write(opTex,'(A)', advance='no') ' + '
+        end if
+     end do
+     write(*,'(A)') ' = '//d2s(load,4)
+     if(saveLaTeX.ge.1) write(opTex,'(A)') ' = '//d2s(load,4)//'.'
+     if(load.gt.1.d0) then
+        write(*,'(A)') '  The task list can NOT be scheduled indefinately... :-('
+        if(saveLaTeX.ge.1) write(opTex,'(A)') 'Hence, the task list can \textbf{not} be scheduled indefinately.'
+     else
+        write(*,'(A)') '  The task list CAN BE SCHEDULED in principle (is feasible) :-)'
+        if(saveLaTeX.ge.1) write(opTex,'(A)') 'Hence, the task list can be scheduled in principle (\emph{i.e.}, it is feasible).'
+     end if
+     write(*,*)
   end if
-  write(*,*)
   
   optTS = gcd(ci(1:np))
   write(*,*)
@@ -261,9 +271,16 @@ subroutine print_system_data(np,time, name,ti,ci,di,pi, load, fileBaseName, opTe
   write(*,'(A,I0,A)') '  Major frame: ', majFr, ' time units'
   write(*,'(A,I0,A)') '  Minor frame: ', gcd(pi(1:np)), ' time units'
   if(saveLaTeX.ge.1) then
-     write(opTex,'(A,I0,A)') 'The optimal timeslice is ', optTS, ' time units, '
-     write(opTex,'(A,I0,A)') 'the major frame ', majFr, ' time units and '
-     write(opTex,'(A,I0,A)') 'the minor frame ', gcd(pi(1:np)), ' time units.'
+     if(trial.eq.1) then
+        write(opTex,'(A,I0,A)') 'The optimal timeslice is ', optTS, ' time units, '
+        write(opTex,'(A,I0,A)') 'the major frame ', majFr, ' time units and '
+        write(opTex,'(A,I0,A)') 'the minor frame ', gcd(pi(1:np)), ' time units.'
+     else
+        write(opTex,'(A,I0,A)') '\textbf{We now use a timeslice of ', optTS0, ' time units.}'
+        write(opTex,'(A,I0,A)') 'The major frame has changed to ', majFr, ' timeslices and '
+        write(opTex,'(A,I0,A)') 'the minor frame to ', gcd(pi(1:np)), ' timeslices.'
+     end if
+     write(opTex,*)
   end if
   write(*,*)
   
