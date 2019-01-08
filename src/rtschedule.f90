@@ -183,6 +183,7 @@ subroutine print_system_data(np,time, name,ti,ci,di,pi, load, fileBaseName, opTe
   use SUFR_kinds, only: double
   use SUFR_text, only: d2s
   use SUFR_numerics, only: gcd,lcm
+  use SUFR_text, only: replace_substring
   use settings, only: optTS, majFr, saveLaTeX, optTS0
   
   implicit none
@@ -192,6 +193,7 @@ subroutine print_system_data(np,time, name,ti,ci,di,pi, load, fileBaseName, opTe
   real(double), intent(out) :: load
   integer :: pr
   real(double) :: frac
+  character :: lFileBaseName*(len(fileBaseName)*2)
   
   ! Print task list:
   write(*,'(A)') '  **************************************************************************************************************'
@@ -200,14 +202,29 @@ subroutine print_system_data(np,time, name,ti,ci,di,pi, load, fileBaseName, opTe
   write(*,*)
   
   if(saveLaTeX.ge.1) then  ! Save LaTeX output
+     ! Replace '_' with '\_'.  Must be done in two steps, since replacement string contains match string
+     lFileBaseName = fileBaseName
+     call replace_substring(lFileBaseName, '_', '&')
+     call replace_substring(lFileBaseName, '&', '\_')
+     
      if(trial.eq.1) then
-        write(opTex,'(A)') '\section{RTschedule results for '//trim(fileBaseName)//'}'
+        write(opTex,'(A)') '\section{RTschedule results for '//trim(lFileBaseName)//'}'
         write(opTex,'(A)') ''
         write(opTex,'(A)') '\subsection{General info}'
      end if
      write(opTex,'(A)') '\begin{table}[ht!]'
      write(opTex,'(A)') '  \centering'
-     write(opTex,'(A)') '  \caption{Task list for '//trim(fileBaseName)//'.}'
+     if(trial.eq.1) then
+        write(opTex,'(A)') '  \caption{'
+        write(opTex,'(A)') '    Task list for '//trim(lFileBaseName)//'.'
+        write(opTex,'(A)') '    \label{tab:'//trim(fileBaseName)//'}'
+        write(opTex,'(A)') '  }'
+     else
+        write(opTex,'(A)') '  \caption{'
+        write(opTex,'(A,I0,A)') '    Task list for '//trim(lFileBaseName)//' with a timeslice of ',optTS0,' time units.'
+        write(opTex,'(A)') '    \label{tab:'//trim(fileBaseName)//'_newTS}'
+        write(opTex,'(A)') '  }'
+     end if
      write(opTex,'(A)') '  \begin{tabular}{l|rrrr}'
      write(opTex,'(4x,5(A5,A))') 'Task', '  & ', '$t_i$', '  & ','$c_i$', '  & ','$d_i$', '  & ','$p_i$', '  \\ \hline'
   end if

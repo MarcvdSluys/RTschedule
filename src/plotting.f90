@@ -19,6 +19,7 @@
 subroutine plot_schedule(sched, np,time, name,ti,pi,di, ccs,run,laxs, fileBaseName,opTex)
   use SUFR_kinds, only: double
   use SUFR_system, only: quit_program_error
+  use SUFR_text, only: replace_substring
   use plplot, only: plsdev, plsfnam, plbox, plmtex,plfill,plptex, plpoin
   use plplot, only: plspage,plinit,plbop,plvpor,plwind,plwidth,pllsty,plschr,plcol0,plssym,plend
   use settings, only: plotType, colour, optTS, fontSize, saveLaTeX
@@ -28,7 +29,7 @@ subroutine plot_schedule(sched, np,time, name,ti,pi,di, ccs,run,laxs, fileBaseNa
   character, intent(in) :: sched*(9), name(np)*(9), fileBaseName*(99)
   integer :: it, pr, xSize,ySize
   real(double) :: xMarg1,xMarg2,yMarg1,yMarg2
-  character :: tmpStr*(9), plFileName*(99)
+  character :: tmpStr*(9), plFileName*(99), lFileBaseName*(len(fileBaseName)*2)
   
   
   call pl_square_grid(time,np, xSize,ySize, xMarg1,xMarg2, yMarg1,yMarg2, fontSize)  ! time x np boxes
@@ -167,11 +168,20 @@ subroutine plot_schedule(sched, np,time, name,ti,pi,di, ccs,run,laxs, fileBaseNa
 
   write(*,'(A)') '  Graphical schedule saved as '//trim(plFileName)
   if(saveLaTeX.ge.1) then
+     
+     ! Replace '_' with '\_'.  Must be done in two steps, since replacement string contains match string
+     lFileBaseName = fileBaseName
+     call replace_substring(lFileBaseName, '_', '&')
+     call replace_substring(lFileBaseName, '&', '\_')
+     
      write(opTex,'(A)') ''
      write(opTex,'(A)') '\begin{figure}[ht!]'
      write(opTex,'(A)') '  \centering'
      write(opTex,'(A)') '  \pgfimage[interpolate=true,width=0.9\textwidth]{'//trim(plFileName)//'}'
-     write(opTex,'(A)') '  \caption{Schedule for '//trim(sched)//'.}'
+     write(opTex,'(A)') '  \caption{'
+     write(opTex,'(A)') '    '//trim(sched)//' schedule for '//trim(lFileBaseName)//'.'
+     write(opTex,'(A)') '    \label{fig:'//trim(fileBaseName)//'_'//trim(sched)//'}'
+     write(opTex,'(A)') '  }'
      write(opTex,'(A)') '\end{figure}'
      write(opTex,'(A)') ''
   end if
